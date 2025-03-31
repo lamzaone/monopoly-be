@@ -112,7 +112,7 @@ def register():
     Register a new user.
     ---
     tags:
-      - User
+      - Users
     parameters:
       - in: body
         name: body
@@ -152,7 +152,7 @@ def login():
     Authenticate a user.
     ---
     tags:
-      - User
+      - Users
     parameters:
       - in: body
         name: body
@@ -190,7 +190,7 @@ def get_user(user_id):
     Get user details.
     ---
     tags:
-      - User
+      - Users
     parameters:
       - in: path
         name: user_id
@@ -1795,7 +1795,7 @@ def get_user_history(user_id):
     Get all games history of a player.
     ---
     tags:
-      - User
+      - Users
     parameters:
       - in: path
         name: player_id
@@ -1843,7 +1843,7 @@ def get_users():
     Get all users.
     ---
     tags:
-      - User
+      - Users
     responses:
       200:
         description: List of users
