@@ -247,10 +247,9 @@ def create_game():
     """
     #user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
-    new_game = Game(status='waiting')
+    new_game = Game()
     db.session.add(new_game)
-    
-    # Automatically join the creator to the game
+    db.session.flush()  # Flush to get the ID before commit
     new_player = Player(user_id=user_id, game_id=new_game.id, balance=1500)
     db.session.add(new_player)
     
