@@ -202,6 +202,7 @@ def get_user(user_id):
     }), 200
 
 ### Game Management Endpoints ###
+# TODO: FIX THIS to properly create a game
 @app.route('/game', methods=['POST'])
 #@jwt_required()
 def create_game():
@@ -221,7 +222,8 @@ def create_game():
             game_id:
               type: integer
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     new_game = Game(status='waiting')
     db.session.add(new_game)
     
@@ -257,7 +259,8 @@ def join_game(game_id):
       400:
         description: Game already started or already in game
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     game = Game.query.get(game_id)
     
     if not game:
@@ -297,7 +300,8 @@ def start_game(game_id):
       400:
         description: Not enough players
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     game = Game.query.get(game_id)
     
     if not game:
@@ -403,7 +407,8 @@ def roll_dice(game_id):
       404:
         description: Game or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     game = Game.query.get(game_id)
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -521,7 +526,8 @@ def buy_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -577,7 +583,8 @@ def mortgage_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -633,7 +640,8 @@ def unmortgage_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -690,7 +698,8 @@ def build_house(game_id, property_id):
       404:
         description: Property or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -762,7 +771,8 @@ def sell_house(game_id, property_id):
       404:
         description: Property or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -852,7 +862,8 @@ def create_trade(game_id):
       404:
         description: Game or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     data = request.get_json()
     
     # Verify game and players exist and are in the same game
@@ -928,7 +939,8 @@ def accept_trade(game_id, trade_id):
       400:
         description: Cannot accept trade
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
     
     if not trade:
@@ -1020,7 +1032,8 @@ def reject_trade(game_id, trade_id):
       400:
         description: Cannot reject trade
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
     
     if not trade:
@@ -1125,7 +1138,8 @@ def place_bid(game_id, auction_id):
       400:
         description: Invalid bid
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     auction = Auction.query.filter_by(id=auction_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -1241,7 +1255,8 @@ def draw_card(game_id):
       404:
         description: Game or player not found
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     data = request.get_json()
     player = Player.query.filter_by(id=data['player_id'], game_id=game_id).first()
     
@@ -1320,7 +1335,8 @@ def pay_jail_fine(game_id):
       400:
         description: Cannot pay jail fine
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
     if not player:
@@ -1372,7 +1388,8 @@ def use_jail_card(game_id):
       400:
         description: Cannot use jail card
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
     if not player:
@@ -1421,7 +1438,8 @@ def declare_bankruptcy(game_id, player_id):
       400:
         description: Cannot declare bankruptcy
     """
-    user_id = get_jwt_identity()
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     player = Player.query.filter_by(id=player_id, game_id=game_id).first()
     
     if not player:
@@ -1537,45 +1555,65 @@ def get_game_history(game_id):
 
 
 # Get all games history of a player
-@app.route('/user/<int:user_id>/history', methods=['GET'])
+@app.route('/player/<int:player_id>/history', methods=['GET'])
 #@jwt_required()
-def get_user_game_history(user_id):
-  """
-  Get all games history of a user.
-  ---
-  tags:
-    - User
-  parameters:
-    - in: path
-    name: user_id
-    required: true
-    type: integer
-  responses:
-    200:
-    description: User's game history
-    404:
-    description: User not found
-  """
-  user = User.query.get(user_id)
-  
-  if not user:
-    return jsonify({'message': 'User not found'}), 404
 
-  # Fetch all players associated with the user
-  players = Player.query.filter_by(user_id=user_id).all()
-  player_ids = [player.id for player in players]
+def get_player_history(player_id):
+    """
+    Get all games history of a player.
+    ---
+    tags:
+      - User
+    parameters:
+      - in: path
+        name: player_id
+        required: true
+        type: integer
+    responses:
+      200:
+        description: Player history
+      404:
+        description: Player not found
+    """
+    #user_id = get_jwt_identity()
+    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    player = Player.query.filter_by(id=player_id).first()
+    
+    if not player:
+        return jsonify({'message': 'Player not found'}), 404
+        
+    if player.user_id != user_id:
+        return jsonify({'message': 'Cannot get history for another player'}), 403
+        
+    history = GameHistory.query.filter_by(player_id=player.id).order_by(GameHistory.created_at).all()
+    
+    return jsonify([{
+        'id': h.id,
+        'game_id': h.game_id,
+        'action': h.action,
+        'details': h.details,
+        'timestamp': h.created_at.isoformat()
+    } for h in history]), 200
 
-  # Fetch game history for all associated players
-  history = GameHistory.query.filter(GameHistory.player_id.in_(player_ids)).order_by(GameHistory.created_at).all()
-  
-  return jsonify([{
-    'id': h.id,
-    'game_id': h.game_id,
-    'player_id': h.player_id,
-    'action': h.action,
-    'details': h.details,
-    'timestamp': h.created_at.isoformat()
-  } for h in history]), 200
+@app.route('/users', methods=['GET'])
+def get_users():
+    """
+    Get all users.
+    ---
+    tags:
+      - User
+    responses:
+      200:
+        description: List of users
+    """
+    users = User.query.all()
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'games_played': user.games_played,
+        'games_won': user.games_won
+    } for user in users]), 200  
+
 
 
 if __name__ == '__main__':
