@@ -2,6 +2,13 @@
 
 ## Setup and run:
 - Install python3
+- Create a virtual environment and activate it:
+```bash
+python3 -m venv venv
+source /venv/bin/activate
+```
+
+    - Note: You will need to always activate the virtual environment everytime you run the backend app! [source /venv/bin/activate]
 - Install all the requirements using `pip install -r requirements.txt`
 - Setup the backend by running the following commands:
   - Windows:

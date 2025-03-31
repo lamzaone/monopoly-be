@@ -12,7 +12,7 @@ app = Flask(__name__)
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///monopoly.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'your-very-secret-key-here'
+app.config['JWT_SECRET_KEY'] = 'very_secret-key'
 app.config['SWAGGER'] = {
     'title': 'Monopoly API',
     'uiversion': 3,
@@ -76,11 +76,11 @@ def calculate_rent(property, game_id):
 def initialize_properties(game_id):
     # Standard Monopoly properties
     properties = [
-        # Brown properties
+        # EXAMPLE PROP
         {'name': 'Mediterranean Avenue', 'position': 1, 'price': 60, 'rent': 2, 
          'rent_with_1_house': 10, 'rent_with_2_houses': 30, 'rent_with_3_houses': 90, 
          'rent_with_hotel': 160, 'mortgage_value': 30, 'color_group': 'brown', 'house_price': 50},
-        # Add all other properties...
+        # TODO: Add all other properties...
     ]
     
     for prop in properties:
@@ -127,6 +127,13 @@ def register():
     responses:
       201:
         description: User registered successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            user_id:
+              type: integer
       400:
         description: Username already exists
     """
@@ -160,6 +167,11 @@ def login():
     responses:
       200:
         description: Login successful
+        schema: 
+          type: object
+          properties:
+            token:
+              type: string
       401:
         description: Invalid credentials
     """
@@ -187,6 +199,17 @@ def get_user(user_id):
     responses:
       200:
         description: User details
+        schema:
+          type: object
+          properties:
+            id:
+              type: integer
+            username:
+              type: string
+            games_played:
+              type: integer
+            games_won:
+              type: integer
       404:
         description: User not found
     """
@@ -254,10 +277,27 @@ def join_game(game_id):
     responses:
       200:
         description: Player joined successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            player_id:
+              type: integer
       404:
         description: Game not found
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       400:
         description: Game already started or already in game
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
     """
     #user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
@@ -344,6 +384,51 @@ def get_game_state(game_id):
     responses:
       200:
         description: Game state
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+            current_player_id:
+              type: integer
+            players:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  user_id:
+                    type: integer
+                  balance:
+                    type: integer
+                  position:
+                    type: integer
+                  in_jail:
+                    type: boolean
+                  is_bankrupt:
+                    type: boolean
+            properties:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  position:
+                    type: integer
+                  price:
+                    type: integer
+                  owner_id:
+                    type: integer
+                  is_mortgaged:
+                    type: boolean
+                  houses:
+                    type: integer
+                  color_group:
+                    type: string
       404:
         description: Game not found
     """
@@ -402,6 +487,32 @@ def roll_dice(game_id):
     responses:
       200:
         description: Dice rolled and player moved
+        schema:
+          type: object
+          properties:
+            dice:
+              type: array
+              items:
+                type: integer
+            new_position:
+              type: integer
+            is_double:
+              type: boolean
+            property:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                price:
+                  type: integer
+                can_buy:
+                  type: boolean
+                owner_id:
+                  type: integer
+                rent_due:
+                  type: integer
       403:
         description: Not your turn
       404:
@@ -521,6 +632,11 @@ def buy_property(game_id, property_id):
     responses:
       200:
         description: Property purchased
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       400:
         description: Cannot buy property
       404:
@@ -578,6 +694,11 @@ def mortgage_property(game_id, property_id):
     responses:
       200:
         description: Property mortgaged
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       400:
         description: Cannot mortgage property
       404:
@@ -635,6 +756,11 @@ def unmortgage_property(game_id, property_id):
     responses:
       200:
         description: Property unmortgaged
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       400:
         description: Cannot unmortgage property
       404:
@@ -693,6 +819,11 @@ def build_house(game_id, property_id):
     responses:
       200:
         description: House built
+        schema: 
+          type: object
+          properties:
+            message:
+              type: string
       400:
         description: Cannot build house
       404:
@@ -766,6 +897,13 @@ def sell_house(game_id, property_id):
     responses:
       200:
         description: House sold
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            amount:
+              type: integer
       400:
         description: Cannot sell house
       404:
@@ -857,6 +995,13 @@ def create_trade(game_id):
     responses:
       201:
         description: Trade created
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            trade_id:
+              type: integer
       400:
         description: Invalid trade
       404:
@@ -934,6 +1079,11 @@ def accept_trade(game_id, trade_id):
     responses:
       200:
         description: Trade accepted
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Trade not found
       400:
@@ -1027,6 +1177,11 @@ def reject_trade(game_id, trade_id):
     responses:
       200:
         description: Trade rejected
+        schema: 
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Trade not found
       400:
@@ -1079,6 +1234,13 @@ def start_auction(game_id):
     responses:
       201:
         description: Auction started
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            auction_id:
+              type: integer
       404:
         description: Game or property not found
       400:
@@ -1133,6 +1295,11 @@ def place_bid(game_id, auction_id):
     responses:
       200:
         description: Bid placed
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Auction or player not found
       400:
@@ -1185,6 +1352,17 @@ def end_auction(game_id, auction_id):
     responses:
       200:
         description: Auction ended
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            winner_id:
+              type: integer
+            property_id:
+              type: integer
+            amount:
+              type: integer
       404:
         description: Auction not found
       400:
@@ -1252,6 +1430,24 @@ def draw_card(game_id):
     responses:
       200:
         description: Card drawn
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            card:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                action:
+                  type: string
+                amount:
+                  type: integer
+                position:
+                  type: integer
       404:
         description: Game or player not found
     """
@@ -1330,6 +1526,11 @@ def pay_jail_fine(game_id):
     responses:
       200:
         description: Paid jail fine
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Player not found
       400:
@@ -1383,6 +1584,11 @@ def use_jail_card(game_id):
     responses:
       200:
         description: Used jail card
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Player not found
       400:
@@ -1433,6 +1639,11 @@ def declare_bankruptcy(game_id, player_id):
     responses:
       200:
         description: Bankruptcy declared
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
       404:
         description: Player not found
       400:
@@ -1484,6 +1695,13 @@ def end_game(game_id):
     responses:
       200:
         description: Game ended
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            winner_id:
+              type: integer
       404:
         description: Game not found
     """
@@ -1536,6 +1754,21 @@ def get_game_history(game_id):
     responses:
       200:
         description: Game history
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              player_id:
+                type: integer
+              action:
+                type: string
+              details:
+                type: string
+              timestamp:
+                type: string
       404:
         description: Game not found
     """
@@ -1555,10 +1788,9 @@ def get_game_history(game_id):
 
 
 # Get all games history of a player
-@app.route('/player/<int:player_id>/history', methods=['GET'])
+@app.route('/user/<int:user_id>/history', methods=['GET'])
 #@jwt_required()
-
-def get_player_history(player_id):
+def get_user_history(user_id):
     """
     Get all games history of a player.
     ---
@@ -1570,22 +1802,31 @@ def get_player_history(player_id):
         required: true
         type: integer
     responses:
-      200:
+      200:        
         description: Player history
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              game_id:
+                type: integer
+              action:
+                type: string
+              details:
+                type: string
+              timestamp:
+                type: string
       404:
         description: Player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
-    player = Player.query.filter_by(id=player_id).first()
-    
-    if not player:
+    user = User.query.get(user_id)
+    if not user:
         return jsonify({'message': 'Player not found'}), 404
         
-    if player.user_id != user_id:
-        return jsonify({'message': 'Cannot get history for another player'}), 403
-        
-    history = GameHistory.query.filter_by(player_id=player.id).order_by(GameHistory.created_at).all()
+    history = GameHistory.query.filter_by(player_id=user_id).order_by(GameHistory.created_at).all()
     
     return jsonify([{
         'id': h.id,
@@ -1594,6 +1835,7 @@ def get_player_history(player_id):
         'details': h.details,
         'timestamp': h.created_at.isoformat()
     } for h in history]), 200
+    
 
 @app.route('/users', methods=['GET'])
 def get_users():
@@ -1605,6 +1847,23 @@ def get_users():
     responses:
       200:
         description: List of users
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              username:
+                type: string
+              games_played:
+                type: integer
+              games_won:
+                type: integer
+      404:
+        description: No users found
+      400:
+        description: Invalid request
     """
     users = User.query.all()
     return jsonify([{
