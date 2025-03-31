@@ -106,7 +106,7 @@ def index():
     return redirect('/apidocs')
 
 ### User Management Endpoints ###
-@app.route('/user/register', methods=['POST'])
+@app.route('/users/register', methods=['POST'])
 def register():
     """
     Register a new user.
@@ -146,7 +146,7 @@ def register():
     db.session.commit()
     return jsonify({'message': 'User registered successfully', 'user_id': new_user.id}), 201
 
-@app.route('/user/login', methods=['POST'])
+@app.route('/users/login', methods=['POST'])
 def login():
     """
     Authenticate a user.
@@ -184,7 +184,7 @@ def login():
     access_token = create_access_token(identity=user.id)
     return jsonify({'token': access_token}), 200
 
-@app.route('/user/<int:user_id>', methods=['GET'])
+@app.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     """
     Get user details.
@@ -1788,7 +1788,7 @@ def get_game_history(game_id):
 
 
 # Get all games history of a player
-@app.route('/user/<int:user_id>/history', methods=['GET'])
+@app.route('/users/<int:user_id>/history', methods=['GET'])
 #@jwt_required()
 def get_user_history(user_id):
     """
