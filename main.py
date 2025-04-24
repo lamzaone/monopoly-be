@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, redirect
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -19,6 +20,15 @@ app.config['SWAGGER'] = {
     'doc_expansion': 'none',
     'specs_route': '/apidocs/'
 }
+
+app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['CORS_SUPPORTS_CREDENTIALS'] = True
+app.config['CORS_EXPOSE_HEADERS'] = ['Content-Type', 'Authorization']
+app.config['CORS_MAX_AGE'] = 3600
+app.config['CORS_ORIGINS'] = [
+    '*'
+]
+CORS(app)
 
 # Initialize extensions
 db.init_app(app)

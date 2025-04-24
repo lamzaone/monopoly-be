@@ -3,3 +3,4 @@ flask_sqlalchemy
 flask_migrate
 flask_jwt_extended
 flasgger
+flask_cors
