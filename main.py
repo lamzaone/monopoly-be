@@ -236,7 +236,36 @@ def get_user(user_id):
 
 ### Game Management Endpoints ###
 # TODO: FIX THIS to properly create a game
-@app.route('/game', methods=['POST'])
+@app.route('/games', methods=['GET'])
+def get_all_games():
+    """
+    Get all games.
+    ---
+    tags:
+      - Game
+    responses:
+      200:
+        description: List of games
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              status:
+                type: string
+              current_player_id:
+                type: integer
+    """
+    games = Game.query.all()
+    return jsonify([{
+        'id': game.id,
+        'status': game.status,
+        'current_player_id': game.current_player_id
+    } for game in games]), 200
+
+@app.route('/games/create', methods=['POST'])
 #@jwt_required()
 def create_game():
     """
@@ -270,7 +299,7 @@ def create_game():
         'player_id': new_player.id
     }), 201
 
-@app.route('/game/<int:game_id>/join', methods=['POST'])
+@app.route('/games/<int:game_id>/join', methods=['POST'])
 #@jwt_required()
 def join_game(game_id):
     """
@@ -328,7 +357,7 @@ def join_game(game_id):
     db.session.commit()
     return jsonify({'message': 'Player joined', 'player_id': new_player.id}), 200
 
-@app.route('/game/<int:game_id>/start', methods=['POST'])
+@app.route('/games/<int:game_id>/start', methods=['POST'])
 #@jwt_required()
 def start_game(game_id):
     """
@@ -377,7 +406,7 @@ def start_game(game_id):
     record_game_history(game_id, None, 'game_started')
     return jsonify({'message': 'Game started'}), 200
 
-@app.route('/game/<int:game_id>', methods=['GET'])
+@app.route('/games/<int:game_id>', methods=['GET'])
 #@jwt_required()
 def get_game_state(game_id):
     """
@@ -472,7 +501,7 @@ def get_game_state(game_id):
     }), 200
 
 ### Gameplay Endpoints ###
-@app.route('/game/<int:game_id>/roll', methods=['POST'])
+@app.route('/games/<int:game_id>/roll', methods=['POST'])
 #@jwt_required()
 def roll_dice(game_id):
     """
@@ -613,7 +642,7 @@ def roll_dice(game_id):
     return jsonify(response), 200
 
 ### Property Endpoints ###
-@app.route('/game/<int:game_id>/property/<int:property_id>/buy', methods=['POST'])
+@app.route('/games/<int:game_id>/property/<int:property_id>/buy', methods=['POST'])
 #@jwt_required()
 def buy_property(game_id, property_id):
     """
@@ -675,7 +704,7 @@ def buy_property(game_id, property_id):
     record_game_history(game_id, player.id, 'property_purchased', property.name)
     return jsonify({'message': 'Property purchased'}), 200
 
-@app.route('/game/<int:game_id>/property/<int:property_id>/mortgage', methods=['POST'])
+@app.route('/games/<int:game_id>/property/<int:property_id>/mortgage', methods=['POST'])
 #@jwt_required()
 def mortgage_property(game_id, property_id):
     """
@@ -737,7 +766,7 @@ def mortgage_property(game_id, property_id):
     record_game_history(game_id, player.id, 'property_mortgaged', property.name)
     return jsonify({'message': 'Property mortgaged'}), 200
 
-@app.route('/game/<int:game_id>/property/<int:property_id>/unmortgage', methods=['POST'])
+@app.route('/games/<int:game_id>/property/<int:property_id>/unmortgage', methods=['POST'])
 #@jwt_required()
 def unmortgage_property(game_id, property_id):
     """
@@ -800,7 +829,7 @@ def unmortgage_property(game_id, property_id):
     record_game_history(game_id, player.id, 'property_unmortgaged', property.name)
     return jsonify({'message': 'Property unmortgaged'}), 200
 
-@app.route('/game/<int:game_id>/property/<int:property_id>/build', methods=['POST'])
+@app.route('/games/<int:game_id>/property/<int:property_id>/build', methods=['POST'])
 #@jwt_required()
 def build_house(game_id, property_id):
     """
@@ -878,7 +907,7 @@ def build_house(game_id, property_id):
     record_game_history(game_id, player.id, 'house_built', property.name)
     return jsonify({'message': 'House built'}), 200
 
-@app.route('/game/<int:game_id>/property/<int:property_id>/sell_house', methods=['POST'])
+@app.route('/games/<int:game_id>/property/<int:property_id>/sell_house', methods=['POST'])
 #@jwt_required()
 def sell_house(game_id, property_id):
     """
@@ -954,7 +983,7 @@ def sell_house(game_id, property_id):
     return jsonify({'message': 'House sold', 'amount': sell_price}), 200
 
 ### Trade Endpoints ###
-@app.route('/game/<int:game_id>/trade', methods=['POST'])
+@app.route('/games/<int:game_id>/trade', methods=['POST'])
 #@jwt_required()
 def create_trade(game_id):
     """
@@ -1068,7 +1097,7 @@ def create_trade(game_id):
     record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
     return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
 
-@app.route('/game/<int:game_id>/trade/<int:trade_id>/accept', methods=['POST'])
+@app.route('/games/<int:game_id>/trade/<int:trade_id>/accept', methods=['POST'])
 #@jwt_required()
 def accept_trade(game_id, trade_id):
     """
@@ -1166,7 +1195,7 @@ def accept_trade(game_id, trade_id):
     record_game_history(game_id, trade.receiver_id, 'trade_accepted', f'trade {trade.id}')
     return jsonify({'message': 'Trade accepted'}), 200
 
-@app.route('/game/<int:game_id>/trade/<int:trade_id>/reject', methods=['POST'])
+@app.route('/games/<int:game_id>/trade/<int:trade_id>/reject', methods=['POST'])
 #@jwt_required()
 def reject_trade(game_id, trade_id):
     """
@@ -1217,7 +1246,7 @@ def reject_trade(game_id, trade_id):
     return jsonify({'message': 'Trade rejected'}), 200
 
 ### Auction Endpoints ###
-@app.route('/game/<int:game_id>/auction', methods=['POST'])
+@app.route('/games/<int:game_id>/auction', methods=['POST'])
 #@jwt_required()
 def start_auction(game_id):
     """
@@ -1274,7 +1303,7 @@ def start_auction(game_id):
     record_game_history(game_id, None, 'auction_started', f'for property {property.id}')
     return jsonify({'message': 'Auction started', 'auction_id': new_auction.id}), 201
 
-@app.route('/game/<int:game_id>/auction/<int:auction_id>/bid', methods=['POST'])
+@app.route('/games/<int:game_id>/auction/<int:auction_id>/bid', methods=['POST'])
 #@jwt_required()
 def place_bid(game_id, auction_id):
     """
@@ -1341,7 +1370,7 @@ def place_bid(game_id, auction_id):
     record_game_history(game_id, player.id, 'auction_bid', f'amount {request.json["amount"]}')
     return jsonify({'message': 'Bid placed'}), 200
 
-@app.route('/game/<int:game_id>/auction/<int:auction_id>/end', methods=['POST'])
+@app.route('/games/<int:game_id>/auction/<int:auction_id>/end', methods=['POST'])
 #@jwt_required()
 def end_auction(game_id, auction_id):
     """
@@ -1412,7 +1441,7 @@ def end_auction(game_id, auction_id):
     }), 200
 
 ### Card Endpoints ###
-@app.route('/game/<int:game_id>/card/draw', methods=['POST'])
+@app.route('/games/<int:game_id>/card/draw', methods=['POST'])
 #@jwt_required()
 def draw_card(game_id):
     """
@@ -1511,7 +1540,7 @@ def draw_card(game_id):
     }), 200
 
 ### Jail Endpoints ###
-@app.route('/game/<int:game_id>/jail/pay', methods=['POST'])
+@app.route('/games/<int:game_id>/jail/pay', methods=['POST'])
 #@jwt_required()
 def pay_jail_fine(game_id):
     """
@@ -1569,7 +1598,7 @@ def pay_jail_fine(game_id):
     record_game_history(game_id, player.id, 'paid_jail_fine')
     return jsonify({'message': 'Paid $50 to get out of jail'}), 200
 
-@app.route('/game/<int:game_id>/jail/use_card', methods=['POST'])
+@app.route('/games/<int:game_id>/jail/use_card', methods=['POST'])
 #@jwt_required()
 def use_jail_card(game_id):
     """
@@ -1628,7 +1657,7 @@ def use_jail_card(game_id):
     return jsonify({'message': 'Used Get Out of Jail Free card'}), 200
 
 ### Bankruptcy Endpoints ###
-@app.route('/game/<int:game_id>/player/<int:player_id>/bankrupt', methods=['POST'])
+@app.route('/games/<int:game_id>/player/<int:player_id>/bankrupt', methods=['POST'])
 #@jwt_required()
 def declare_bankruptcy(game_id, player_id):
     """
@@ -1688,7 +1717,7 @@ def declare_bankruptcy(game_id, player_id):
     return jsonify({'message': 'Bankruptcy declared'}), 200
 
 ### Game Endpoints ###
-@app.route('/game/<int:game_id>/end', methods=['POST'])
+@app.route('/games/<int:game_id>/end', methods=['POST'])
 #@jwt_required()
 def end_game(game_id):
     """
@@ -1747,7 +1776,7 @@ def end_game(game_id):
         'winner_id': winner.id if winner else None
     }), 200
 
-@app.route('/game/<int:game_id>/history', methods=['GET'])
+@app.route('/games/<int:game_id>/history', methods=['GET'])
 #@jwt_required()
 def get_game_history(game_id):
     """
