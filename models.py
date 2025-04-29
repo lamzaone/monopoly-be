@@ -22,6 +22,7 @@ class Game(db.Model):
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    username = db.Column(db.String(80), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
     balance = db.Column(db.Integer, default=1500)
     position = db.Column(db.Integer, default=0)

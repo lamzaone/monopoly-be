@@ -264,6 +264,17 @@ def get_all_games():
               type: integer
             players:
               type: array
+              items:
+                type: integer
+            placements:
+              type: array
+              items:
+                type: object
+                properties:
+                  player_id:
+                    type: integer
+                  placement:
+                    type: integer
             player_count:
               type: integer
   """
@@ -277,6 +288,21 @@ def get_all_games():
     'status': game.status,
     'current_player_id': game.current_player_id,
     'players': [player.user_id for player in game.players],
+    'placements': [
+      {
+        'player_id': player.id,
+        'placement': idx + 1
+      }
+      for idx, player in enumerate(
+        sorted(
+          game.players,
+          key=lambda p: p.balance + sum(
+            prop.price for prop in Property.query.filter_by(owner_id=p.id).all()
+          ),
+          reverse=True
+        )
+      )
+    ] if game.status == 'finished' else [],
     'player_count': len(game.players)
   } for game in games]), 200
 
@@ -301,10 +327,11 @@ def create_game():
     """
     #user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user = User.query.get(user_id)  # Fetch the user from the database
     new_game = Game()
     db.session.add(new_game)
     db.session.flush()  # Flush to get the ID before commit
-    new_player = Player(user_id=user_id, game_id=new_game.id, balance=1500)
+    new_player = Player(user_id=user_id, username=user.username, game_id=new_game.id, balance=1500)
     db.session.add(new_player)
     
     db.session.commit()
@@ -354,21 +381,25 @@ def join_game(game_id):
     """
     # user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user = User.query.get(user_id)  # Fetch the user from the database
+    
+    if not user:
+      return jsonify({'message': 'User not found'}), 404
+    
     game = Game.query.get(game_id)
     
     if not game:
-        return jsonify({'message': 'Game not found'}), 404
-        
+      return jsonify({'message': 'Game not found'}), 404
+      
     if game.status != 'waiting':
-        return jsonify({'message': 'Game already started'}), 400
-        
+      return jsonify({'message': 'Game already started'}), 400
+      
     # Check if user is already in the game
     existing_player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     if existing_player:
-        return jsonify({'message': 'Already in game'}), 400
+      return jsonify({'message': 'Already in game'}), 400
     
-        
-    new_player = Player(user_id=user_id, game_id=game.id, balance=1500)
+    new_player = Player(user_id=user_id, username=user.username, game_id=game.id, balance=1500)
     db.session.add(new_player)
     db.session.commit()
     return jsonify({'message': 'Player joined', 'player_id': new_player.id}), 200
@@ -1845,50 +1876,67 @@ def get_game_history(game_id):
 @app.route('/users/<int:user_id>/history', methods=['GET'])
 #@jwt_required()
 def get_user_history(user_id):
-    """
-    Get all games history of a player.
-    ---
-    tags:
-      - Users
-    parameters:
-      - in: path
-        name: player_id
-        required: true
-        type: integer
-    responses:
-      200:        
-        description: Player history
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              game_id:
-                type: integer
-              action:
-                type: string
-              details:
-                type: string
-              timestamp:
-                type: string
-      404:
-        description: Player not found
-    """
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'message': 'Player not found'}), 404
-        
-    history = GameHistory.query.filter_by(player_id=user_id).order_by(GameHistory.created_at).all()
-    
-    return jsonify([{
-        'id': h.id,
-        'game_id': h.game_id,
-        'action': h.action,
-        'details': h.details,
-        'timestamp': h.created_at.isoformat()
-    } for h in history]), 200
+  """
+  Get all games history of a user.
+  ---
+  tags:
+    - Users
+  parameters:
+    - in: path
+      name: user_id
+      required: true
+      type: integer
+  responses:
+    200:
+      description: User history
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+            game_id:
+              type: integer
+            action:
+              type: string
+            details:
+              type: string
+            timestamp:
+              type: string
+    404:
+      description: User not found
+  """
+  user = User.query.get(user_id)
+  if not user:
+    return jsonify({'message': 'User not found'}), 404
+
+  # Fetch all games the user participated in
+  player_games = Player.query.filter_by(user_id=user_id).all()
+
+  # Prepare the response with games won and placements
+  games_summary = []
+  for player in player_games:
+    game = Game.query.get(player.game_id)
+    if not game:
+      continue
+
+    # Determine placement by comparing net worth of all players in the game
+    players = Player.query.filter_by(game_id=player.game_id).all()
+    net_worths = [
+      (p.id, p.balance + sum(prop.price for prop in Property.query.filter_by(owner_id=p.id).all()))
+      for p in players
+    ]
+    net_worths.sort(key=lambda x: x[1], reverse=True)
+    placement = next((i + 1 for i, (pid, _) in enumerate(net_worths) if pid == player.id), None)
+
+    games_summary.append({
+      'game_id': player.game_id,
+      'placement': placement,
+      'won': placement == 1
+    })
+
+  return jsonify(games_summary), 200
     
 
 @app.route('/users', methods=['GET'])
