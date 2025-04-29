@@ -244,24 +244,24 @@ def get_all_games():
     - Game
   parameters:
     - in: query
-    name: status
-    required: false
-    type: string
-    description: Filter games by status (e.g., 'waiting', 'active', 'finished')
+      name: status
+      required: false
+      type: string
+      description: Filter games by status (e.g., 'waiting', 'active', 'finished')
   responses:
     200:
-    description: List of games
-    schema:
-      type: array
-      items:
-      type: object
-      properties:
-        id:
-        type: integer
-        status:
-        type: string
-        current_player_id:
-        type: integer
+      description: List of games
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+            status:
+              type: string
+            current_player_id:
+              type: integer
   """
   status = request.args.get('status')
   if status:
