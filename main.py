@@ -235,35 +235,44 @@ def get_user(user_id):
     }), 200
 
 ### Game Management Endpoints ###
-# TODO: FIX THIS to properly create a game
 @app.route('/games', methods=['GET'])
 def get_all_games():
-    """
-    Get all games.
-    ---
-    tags:
-      - Game
-    responses:
-      200:
-        description: List of games
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              status:
-                type: string
-              current_player_id:
-                type: integer
-    """
+  """
+  Get all games, optionally filtered by status.
+  ---
+  tags:
+    - Game
+  parameters:
+    - in: query
+    name: status
+    required: false
+    type: string
+    description: Filter games by status (e.g., 'waiting', 'active', 'finished')
+  responses:
+    200:
+    description: List of games
+    schema:
+      type: array
+      items:
+      type: object
+      properties:
+        id:
+        type: integer
+        status:
+        type: string
+        current_player_id:
+        type: integer
+  """
+  status = request.args.get('status')
+  if status:
+    games = Game.query.filter_by(status=status).all()
+  else:
     games = Game.query.all()
-    return jsonify([{
-        'id': game.id,
-        'status': game.status,
-        'current_player_id': game.current_player_id
-    } for game in games]), 200
+  return jsonify([{
+    'id': game.id,
+    'status': game.status,
+    'current_player_id': game.current_player_id
+  } for game in games]), 200
 
 @app.route('/games/create', methods=['POST'])
 #@jwt_required()
