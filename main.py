@@ -7,6 +7,8 @@ from models import db, User, Game, Player, Property, Trade, TradeItem, Auction, 
 from flasgger import Swagger
 import random
 from datetime import datetime
+import json
+import os
 
 app = Flask(__name__)
 
@@ -90,13 +92,10 @@ def calculate_rent(property, game_id):
 
 def initialize_properties(game_id):
     # Standard Monopoly properties
-    properties = [
-        # EXAMPLE PROP
-        {'name': 'Mediterranean Avenue', 'position': 1, 'price': 60, 'rent': 2, 
-         'rent_with_1_house': 10, 'rent_with_2_houses': 30, 'rent_with_3_houses': 90, 
-         'rent_with_hotel': 160, 'mortgage_value': 30, 'color_group': 'brown', 'house_price': 50},
-        # TODO: Add all other properties...
-    ]
+    properties_file_path = os.path.join(os.path.dirname(__file__), 'properties.json')
+    with open(properties_file_path, 'r') as file:
+        properties = json.load(file)
+    print(properties)
     
     for prop in properties:
         new_prop = Property(
