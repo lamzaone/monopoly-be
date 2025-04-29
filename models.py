@@ -14,6 +14,7 @@ class User(db.Model):
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.String(20), default='waiting')  # waiting, active, finished
+    max_players = db.Column(db.Integer, default=4)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     current_player_id = db.Column(db.Integer)
     players = db.relationship('Player', backref='game', lazy=True)

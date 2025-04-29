@@ -265,7 +265,12 @@ def get_all_games():
             players:
               type: array
               items:
-                type: integer
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  username:
+                    type: string
             placements:
               type: array
               items:
@@ -287,7 +292,12 @@ def get_all_games():
     'id': game.id,
     'status': game.status,
     'current_player_id': game.current_player_id,
-    'players': [player.user_id for player in game.players],
+    'players': [
+        {
+            'user_id': player.user_id,
+            'username': player.username
+        } for player in game.players
+    ],
     'placements': [
       {
         'player_id': player.id,
@@ -303,6 +313,7 @@ def get_all_games():
         )
       )
     ] if game.status == 'finished' else [],
+    'max_players': game.max_players,
     'player_count': len(game.players)
   } for game in games]), 200
 
@@ -314,6 +325,12 @@ def create_game():
     ---
     tags:
       - Game
+    parameters:
+      - in: query
+        name: max_players
+        required: false
+        type: integer
+        description: Maximum number of players
     responses:
       201:
         description: Game created
@@ -325,10 +342,11 @@ def create_game():
             game_id:
               type: integer
     """
+    max_players = request.args.get('max_players', default=4, type=int)
     #user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     user = User.query.get(user_id)  # Fetch the user from the database
-    new_game = Game()
+    new_game = Game(max_players=max_players)
     db.session.add(new_game)
     db.session.flush()  # Flush to get the ID before commit
     new_player = Player(user_id=user_id, username=user.username, game_id=new_game.id, balance=1500)
@@ -398,6 +416,10 @@ def join_game(game_id):
     existing_player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     if existing_player:
       return jsonify({'message': 'Already in game'}), 400
+    
+    # Check if max players reached
+    if len(game.players) >= game.max_players:
+      return jsonify({'message': 'Max players reached'}), 400
     
     new_player = Player(user_id=user_id, username=user.username, game_id=game.id, balance=1500)
     db.session.add(new_player)
