@@ -36,6 +36,11 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 swagger = Swagger(app)
 
+# link JWT to user model
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return user.id
+
 # Helper functions
 def record_game_history(game_id, player_id, action, details=None):
     history = GameHistory(
