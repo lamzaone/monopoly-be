@@ -262,6 +262,10 @@ def get_all_games():
               type: string
             current_player_id:
               type: integer
+            players:
+              type: array
+            player_count:
+              type: integer
   """
   status = request.args.get('status')
   if status:
@@ -271,7 +275,9 @@ def get_all_games():
   return jsonify([{
     'id': game.id,
     'status': game.status,
-    'current_player_id': game.current_player_id
+    'current_player_id': game.current_player_id,
+    'players': [player.user_id for player in game.players],
+    'player_count': len(game.players)
   } for game in games]), 200
 
 @app.route('/games/create', methods=['POST'])
@@ -346,7 +352,7 @@ def join_game(game_id):
             message:
               type: string
     """
-    #user_id = get_jwt_identity()
+    # user_id = get_jwt_identity()
     user_id = 1  # Placeholder for user ID, replace with actual JWT identity
     game = Game.query.get(game_id)
     
@@ -360,6 +366,7 @@ def join_game(game_id):
     existing_player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     if existing_player:
         return jsonify({'message': 'Already in game'}), 400
+    
         
     new_player = Player(user_id=user_id, game_id=game.id, balance=1500)
     db.session.add(new_player)
