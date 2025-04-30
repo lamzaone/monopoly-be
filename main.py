@@ -192,7 +192,7 @@ def login():
     if not user or user.password != data['password']:
         return jsonify({'message': 'Invalid credentials'}), 401
 
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
     return jsonify({'token': access_token}), 200
 
 @app.route('/users/<int:user_id>', methods=['GET'])
