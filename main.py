@@ -192,7 +192,7 @@ def login():
     if not user or user.password != data['password']:
         return jsonify({'message': 'Invalid credentials'}), 401
 
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
     return jsonify({'token': access_token}), 200
 
 @app.route('/users/<int:user_id>', methods=['GET'])
@@ -319,7 +319,7 @@ def get_all_games():
   } for game in games]), 200
 
 @app.route('/games/create', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def create_game():
     """
     Create a new game.
@@ -344,8 +344,7 @@ def create_game():
               type: integer
     """
     max_players = request.args.get('max_players', default=4, type=int)
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     user = User.query.get(user_id)  # Fetch the user from the database
     new_game = Game(max_players=max_players)
     db.session.add(new_game)
@@ -361,7 +360,7 @@ def create_game():
     }), 201
 
 @app.route('/games/<int:game_id>/join', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def join_game(game_id):
     """
     Join an existing game.
@@ -398,8 +397,7 @@ def join_game(game_id):
             message:
               type: string
     """
-    # user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     user = User.query.get(user_id)  # Fetch the user from the database
     
     if not user:
@@ -428,7 +426,7 @@ def join_game(game_id):
     return jsonify({'message': 'Player joined', 'player_id': new_player.id}), 200
 
 @app.route('/games/<int:game_id>/start', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def start_game(game_id):
     """
     Start a game.
@@ -448,8 +446,7 @@ def start_game(game_id):
       400:
         description: Not enough players
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     game = Game.query.get(game_id)
     
     if not game:
@@ -477,7 +474,7 @@ def start_game(game_id):
     return jsonify({'message': 'Game started'}), 200
 
 @app.route('/games/<int:game_id>', methods=['GET'])
-#@jwt_required()
+@jwt_required()
 def get_game_state(game_id):
     """
     Get game state.
@@ -572,7 +569,7 @@ def get_game_state(game_id):
 
 ### Gameplay Endpoints ###
 @app.route('/games/<int:game_id>/roll', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def roll_dice(game_id):
     """
     Roll dice and move player.
@@ -626,8 +623,7 @@ def roll_dice(game_id):
       404:
         description: Game or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     game = Game.query.get(game_id)
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -713,7 +709,7 @@ def roll_dice(game_id):
 
 ### Property Endpoints ###
 @app.route('/games/<int:game_id>/property/<int:property_id>/buy', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def buy_property(game_id, property_id):
     """
     Buy a property.
@@ -750,8 +746,7 @@ def buy_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -775,7 +770,7 @@ def buy_property(game_id, property_id):
     return jsonify({'message': 'Property purchased'}), 200
 
 @app.route('/games/<int:game_id>/property/<int:property_id>/mortgage', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def mortgage_property(game_id, property_id):
     """
     Mortgage a property.
@@ -812,8 +807,7 @@ def mortgage_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -837,7 +831,7 @@ def mortgage_property(game_id, property_id):
     return jsonify({'message': 'Property mortgaged'}), 200
 
 @app.route('/games/<int:game_id>/property/<int:property_id>/unmortgage', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def unmortgage_property(game_id, property_id):
     """
     Unmortgage a property.
@@ -874,8 +868,7 @@ def unmortgage_property(game_id, property_id):
       404:
         description: Property or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -900,7 +893,7 @@ def unmortgage_property(game_id, property_id):
     return jsonify({'message': 'Property unmortgaged'}), 200
 
 @app.route('/games/<int:game_id>/property/<int:property_id>/build', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def build_house(game_id, property_id):
     """
     Build a house on a property.
@@ -937,8 +930,7 @@ def build_house(game_id, property_id):
       404:
         description: Property or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -978,7 +970,7 @@ def build_house(game_id, property_id):
     return jsonify({'message': 'House built'}), 200
 
 @app.route('/games/<int:game_id>/property/<int:property_id>/sell_house', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def sell_house(game_id, property_id):
     """
     Sell a house from a property.
@@ -1017,8 +1009,7 @@ def sell_house(game_id, property_id):
       404:
         description: Property or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -1054,7 +1045,7 @@ def sell_house(game_id, property_id):
 
 ### Trade Endpoints ###
 @app.route('/games/<int:game_id>/trade', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def create_trade(game_id):
     """
     Create a new trade offer.
@@ -1115,8 +1106,7 @@ def create_trade(game_id):
       404:
         description: Game or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     data = request.get_json()
     
     # Verify game and players exist and are in the same game
@@ -1168,7 +1158,7 @@ def create_trade(game_id):
     return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
 
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/accept', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def accept_trade(game_id, trade_id):
     """
     Accept a trade offer.
@@ -1197,8 +1187,7 @@ def accept_trade(game_id, trade_id):
       400:
         description: Cannot accept trade
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
     
     if not trade:
@@ -1266,7 +1255,7 @@ def accept_trade(game_id, trade_id):
     return jsonify({'message': 'Trade accepted'}), 200
 
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/reject', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def reject_trade(game_id, trade_id):
     """
     Reject a trade offer.
@@ -1295,8 +1284,7 @@ def reject_trade(game_id, trade_id):
       400:
         description: Cannot reject trade
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
     
     if not trade:
@@ -1317,7 +1305,7 @@ def reject_trade(game_id, trade_id):
 
 ### Auction Endpoints ###
 @app.route('/games/<int:game_id>/auction', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def start_auction(game_id):
     """
     Start an auction for a property.
@@ -1374,7 +1362,7 @@ def start_auction(game_id):
     return jsonify({'message': 'Auction started', 'auction_id': new_auction.id}), 201
 
 @app.route('/games/<int:game_id>/auction/<int:auction_id>/bid', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def place_bid(game_id, auction_id):
     """
     Place a bid in an auction.
@@ -1413,8 +1401,7 @@ def place_bid(game_id, auction_id):
       400:
         description: Invalid bid
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     auction = Auction.query.filter_by(id=auction_id, game_id=game_id).first()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
@@ -1441,7 +1428,7 @@ def place_bid(game_id, auction_id):
     return jsonify({'message': 'Bid placed'}), 200
 
 @app.route('/games/<int:game_id>/auction/<int:auction_id>/end', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def end_auction(game_id, auction_id):
     """
     End an auction.
@@ -1512,7 +1499,7 @@ def end_auction(game_id, auction_id):
 
 ### Card Endpoints ###
 @app.route('/games/<int:game_id>/card/draw', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def draw_card(game_id):
     """
     Draw a chance or community chest card.
@@ -1559,8 +1546,7 @@ def draw_card(game_id):
       404:
         description: Game or player not found
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     data = request.get_json()
     player = Player.query.filter_by(id=data['player_id'], game_id=game_id).first()
     
@@ -1611,7 +1597,7 @@ def draw_card(game_id):
 
 ### Jail Endpoints ###
 @app.route('/games/<int:game_id>/jail/pay', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def pay_jail_fine(game_id):
     """
     Pay to get out of jail.
@@ -1644,8 +1630,7 @@ def pay_jail_fine(game_id):
       400:
         description: Cannot pay jail fine
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
     if not player:
@@ -1669,7 +1654,7 @@ def pay_jail_fine(game_id):
     return jsonify({'message': 'Paid $50 to get out of jail'}), 200
 
 @app.route('/games/<int:game_id>/jail/use_card', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def use_jail_card(game_id):
     """
     Use Get Out of Jail Free card.
@@ -1702,8 +1687,7 @@ def use_jail_card(game_id):
       400:
         description: Cannot use jail card
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
     
     if not player:
@@ -1728,7 +1712,7 @@ def use_jail_card(game_id):
 
 ### Bankruptcy Endpoints ###
 @app.route('/games/<int:game_id>/player/<int:player_id>/bankrupt', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def declare_bankruptcy(game_id, player_id):
     """
     Declare bankruptcy.
@@ -1757,8 +1741,7 @@ def declare_bankruptcy(game_id, player_id):
       400:
         description: Cannot declare bankruptcy
     """
-    #user_id = get_jwt_identity()
-    user_id = 1  # Placeholder for user ID, replace with actual JWT identity
+    user_id = get_jwt_identity()
     player = Player.query.filter_by(id=player_id, game_id=game_id).first()
     
     if not player:
@@ -1788,7 +1771,7 @@ def declare_bankruptcy(game_id, player_id):
 
 ### Game Endpoints ###
 @app.route('/games/<int:game_id>/end', methods=['POST'])
-#@jwt_required()
+@jwt_required()
 def end_game(game_id):
     """
     End a game.
@@ -1847,7 +1830,7 @@ def end_game(game_id):
     }), 200
 
 @app.route('/games/<int:game_id>/history', methods=['GET'])
-#@jwt_required()
+@jwt_required()
 def get_game_history(game_id):
     """
     Get game history.
@@ -1897,7 +1880,7 @@ def get_game_history(game_id):
 
 # Get all games history of a player
 @app.route('/users/<int:user_id>/history', methods=['GET'])
-#@jwt_required()
+@jwt_required()
 def get_user_history(user_id):
   """
   Get all games history of a user.
