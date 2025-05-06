@@ -99,15 +99,15 @@ def initialize_properties(game_id):
             game_id=game_id,
             name=prop['name'],
             position=prop['position'],
-            price=prop['price'],
-            rent=prop['rent'],
-            rent_with_1_house=prop['rent_with_1_house'],
-            rent_with_2_houses=prop['rent_with_2_houses'],
-            rent_with_3_houses=prop['rent_with_3_houses'],
-            rent_with_hotel=prop['rent_with_hotel'],
-            mortgage_value=prop['mortgage_value'],
-            color_group=prop['color_group'],
-            house_price=prop['house_price']
+            price=prop.get('price', 0),
+            rent=prop.get('rent', 0),
+            #rent_with_1_house=prop.get('rent_with_1_house', None),
+            #rent_with_2_houses=prop.get('rent_with_2_houses', None),
+            #rent_with_3_houses=prop.get('rent_with_3_houses', None),
+            #rent_with_hotel=prop.get('rent_with_hotel', None),
+            mortgage_value=prop.get('mortgage_value', 0),
+            color_group=prop.get('color_group', ''),
+            house_price=prop.get('house_price', 0)
         )
         db.session.add(new_prop)
     db.session.commit()
@@ -317,6 +317,67 @@ def get_all_games():
     'max_players': game.max_players,
     'player_count': len(game.players)
   } for game in games]), 200
+
+@app.route('/games/<int:game_id>/player_data', methods=['GET'])
+@jwt_required()
+def get_game_by_id(game_id):
+    """
+    Get game by id.
+    ---
+    tags:
+      - Game
+    parameters:
+      - in: query
+        name: game_id
+        required: true
+        type: integer
+        description: Game id.
+    responses:
+      200:
+        description: A game with the given id
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              status:
+                type: string
+              current_player_id:
+                type: integer
+              players:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_id:
+                      type: integer
+                    username:
+                      type: string
+              placements:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    player_id:
+                      type: integer
+                    placement:
+                      type: integer
+              player_count:
+                type: integer
+    """
+    game = Game.query.filter_by(id = game_id).first()
+    return jsonify({
+    'players': [
+        {
+            'user_id': player.user_id,
+            'username': player.username
+        } for player in game.players
+    ],
+    'max_players': game.max_players,
+    'player_count': len(game.players)
+  } ), 200
 
 @app.route('/games/create', methods=['POST'])
 @jwt_required()
