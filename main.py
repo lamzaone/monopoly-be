@@ -23,6 +23,7 @@ app.config['SWAGGER'] = {
     'specs_route': '/apidocs/'
 }
 
+
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['CORS_SUPPORTS_CREDENTIALS'] = True
 app.config['CORS_EXPOSE_HEADERS'] = ['Content-Type', 'Authorization']
@@ -38,6 +39,8 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 swagger = Swagger(app)
 
+# set JWT token expiration time to 1 week
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 60 * 60 * 24 * 7
 
 
 # Helper functions
