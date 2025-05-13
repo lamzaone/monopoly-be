@@ -237,6 +237,82 @@ def get_user(user_id):
         'games_played': user.games_played,
         'games_won': user.games_won
     }), 200
+@app.route('/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    """
+    Delete a user.
+    ---
+    tags:
+      - Users
+    parameters:
+      - in: path
+        name: user_id
+        required: true
+        type: integer
+    responses:
+      200:
+        description: User deleted successfully
+      404:
+        description: User not found
+    """
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+        
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted successfully'}), 200
+@app.route('/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    """
+    Update user details.
+    ---
+    tags:
+      - Users
+    parameters:
+      - in: path
+        name: user_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: User updated successfully
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+      404:
+        description: User not found
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+    """
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+        
+    data = request.get_json()
+
+    if 'username' in data:
+        user.username = data['username']
+    if 'password' in data:
+        user.password = data['password']
+    db.session.commit()
+    return jsonify({'message': 'User updated successfully'}), 200
+
 
 ### Game Management Endpoints ###
 @app.route('/games', methods=['GET'])
@@ -573,6 +649,32 @@ def get_game_state(game_id):
             'color_group': prop.color_group
         } for prop in properties]
     }), 200
+@app.route('/games/<int:game_id>)', methods=['DELETE'])
+def delete_game(game_id):
+    """
+    Delete a game.
+    ---
+    tags:
+      - Game
+    parameters:
+      - in: path
+        name: game_id
+        required: true
+        type: integer
+    responses:
+      200:
+        description: Game deleted
+      404:
+        description: Game not found
+    """
+    game = Game.query.get(game_id)
+    if not game:
+        return jsonify({'message': 'Game not found'}), 404
+    if game.state != 'waiting':
+        return jsonify({'message': 'Cannot delete an active game'}), 400
+    db.session.delete(game)
+    db.session.commit()
+    
 
 ### Gameplay Endpoints ###
 @app.route('/games/<int:game_id>/roll', methods=['POST'])
