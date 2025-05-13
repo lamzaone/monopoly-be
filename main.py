@@ -318,66 +318,6 @@ def get_all_games():
     'player_count': len(game.players)
   } for game in games]), 200
 
-@app.route('/games/<int:game_id>/player_data', methods=['GET'])
-@jwt_required()
-def get_game_by_id(game_id):
-    """
-    Get game by id.
-    ---
-    tags:
-      - Game
-    parameters:
-      - in: query
-        name: game_id
-        required: true
-        type: integer
-        description: Game id.
-    responses:
-      200:
-        description: A game with the given id
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              status:
-                type: string
-              current_player_id:
-                type: integer
-              players:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    user_id:
-                      type: integer
-                    username:
-                      type: string
-              placements:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    player_id:
-                      type: integer
-                    placement:
-                      type: integer
-              player_count:
-                type: integer
-    """
-    game = Game.query.filter_by(id = game_id).first()
-    return jsonify({
-    'players': [
-        {
-            'user_id': player.user_id,
-            'username': player.username
-        } for player in game.players
-    ],
-    'max_players': game.max_players,
-    'player_count': len(game.players)
-  } ), 200
 
 @app.route('/games/create', methods=['POST'])
 @jwt_required()
@@ -557,6 +497,8 @@ def get_game_state(game_id):
               type: string
             current_player_id:
               type: integer
+            max_players:
+              type: integer
             players:
               type: array
               items:
@@ -608,6 +550,7 @@ def get_game_state(game_id):
     return jsonify({
         'status': game.status,
         'current_player_id': game.current_player_id,
+        'max_players': game.max_players,
         'players': [{
             'id': p.id,
             'user_id': p.user_id,
