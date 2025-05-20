@@ -99,8 +99,6 @@ def initialize_properties(game_id):
     
     for prop in properties:
         new_prop = Property(
-            # set ID to key from JSON
-            id=prop['id'],
             game_id=game_id,
             name=prop['name'],
             position=prop['position'],
