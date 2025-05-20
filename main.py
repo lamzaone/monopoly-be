@@ -597,6 +597,8 @@ def get_game_state(game_id):
                     type: boolean
                   is_bankrupt:
                     type: boolean
+                  username:
+                    type: string
             properties:
               type: array
               items:
@@ -638,7 +640,8 @@ def get_game_state(game_id):
             'balance': p.balance,
             'position': p.position,
             'in_jail': p.in_jail,
-            'is_bankrupt': p.is_bankrupt
+            'is_bankrupt': p.is_bankrupt,
+            'username': p.username
         } for p in players],
         'properties': [{
             'id': prop.id,
