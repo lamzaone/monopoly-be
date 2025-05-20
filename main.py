@@ -99,6 +99,8 @@ def initialize_properties(game_id):
     
     for prop in properties:
         new_prop = Property(
+            # set ID to key from JSON
+            id=prop['id'],
             game_id=game_id,
             name=prop['name'],
             position=prop['position'],
@@ -693,11 +695,6 @@ def roll_dice(game_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Dice rolled and player moved
@@ -717,6 +714,8 @@ def roll_dice(game_id):
               properties:
                 id:
                   type: integer
+                position:
+                  type: integer
                 name:
                   type: string
                 price:
@@ -734,7 +733,7 @@ def roll_dice(game_id):
     """
     user_id = get_jwt_identity()
     game = Game.query.get(game_id)
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not game or not player:
         return jsonify({'message': 'Game or player not found'}), 404
@@ -800,6 +799,7 @@ def roll_dice(game_id):
                     'id': property.id,
                     'name': property.name,
                     'price': property.price,
+                    'position': property.position,
                     'can_buy': player.balance >= property.price
                 }
             })
@@ -810,6 +810,7 @@ def roll_dice(game_id):
                     'id': property.id,
                     'name': property.name,
                     'owner_id': property.owner_id,
+                    'position': property.position,
                     'rent_due': rent
                 }
             })
@@ -837,11 +838,6 @@ def buy_property(game_id, property_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Property purchased
@@ -857,7 +853,8 @@ def buy_property(game_id, property_id):
     """
     user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    # get player from user_id and game id
+    player= Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
@@ -870,6 +867,9 @@ def buy_property(game_id, property_id):
         
     if player.position != property.position:
         return jsonify({'message': 'Not on this property'}), 400
+    
+    if property.price == 0:
+        return jsonify({'message': 'Can not buy this.'}), 400
         
     player.balance -= property.price
     property.owner_id = player.id
@@ -918,7 +918,7 @@ def mortgage_property(game_id, property_id):
     """
     user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
@@ -979,7 +979,7 @@ def unmortgage_property(game_id, property_id):
     """
     user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
@@ -1041,7 +1041,7 @@ def build_house(game_id, property_id):
     """
     user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
@@ -1120,7 +1120,7 @@ def sell_house(game_id, property_id):
     """
     user_id = get_jwt_identity()
     property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
@@ -1512,7 +1512,7 @@ def place_bid(game_id, auction_id):
     """
     user_id = get_jwt_identity()
     auction = Auction.query.filter_by(id=auction_id, game_id=game_id).first()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not auction or not player:
         return jsonify({'message': 'Auction or player not found'}), 404
@@ -1740,7 +1740,7 @@ def pay_jail_fine(game_id):
         description: Cannot pay jail fine
     """
     user_id = get_jwt_identity()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not player:
         return jsonify({'message': 'Player not found'}), 404
@@ -1797,7 +1797,7 @@ def use_jail_card(game_id):
         description: Cannot use jail card
     """
     user_id = get_jwt_identity()
-    player = Player.query.filter_by(id=request.json['player_id'], game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not player:
         return jsonify({'message': 'Player not found'}), 404
