@@ -774,6 +774,11 @@ def roll_dice(game_id):
     if (player.position + total) >= 40:
         player.balance += 200
         record_game_history(game_id, player.id, 'passed_go', 'Received $200')
+
+    # check if has to pay income tax
+    if player.position == 4:
+      player.balance -= 80
+      record_game_history(game_id, player.id, 'paid_income_tax', 'Paid $80')
     
     # Determine next player
     if not double:
