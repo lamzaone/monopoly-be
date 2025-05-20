@@ -968,8 +968,8 @@ def unmortgage_property(game_id, property_id):
         description: Property or player not found
     """
     user_id = get_jwt_identity()
-    property = Property.query.filter_by(id=property_id, game_id=game_id).first()
-    player = Player.query
+    property = Property.query.filter_by(id=property_id, game_id=game_id).first()    
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not property or not player:
         return jsonify({'message': 'Property or player not found'}), 404
