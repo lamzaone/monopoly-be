@@ -898,11 +898,6 @@ def mortgage_property(game_id, property_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Property mortgaged
@@ -959,11 +954,6 @@ def unmortgage_property(game_id, property_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Property unmortgaged
@@ -1021,11 +1011,6 @@ def build_house(game_id, property_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: House built
@@ -1098,11 +1083,6 @@ def sell_house(game_id, property_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: House sold
@@ -1493,8 +1473,6 @@ def place_bid(game_id, auction_id):
         schema:
           type: object
           properties:
-            player_id:
-              type: integer
             amount:
               type: integer
     responses:
@@ -1626,8 +1604,6 @@ def draw_card(game_id):
         schema:
           type: object
           properties:
-            player_id:
-              type: integer
             card_type:
               type: string
               enum: [chance, community_chest]
@@ -1656,8 +1632,8 @@ def draw_card(game_id):
         description: Game or player not found
     """
     user_id = get_jwt_identity()
-    data = request.get_json()
-    player = Player.query.filter_by(id=data['player_id'], game_id=game_id).first()
+    data = request.get_json()    
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not player:
         return jsonify({'message': 'Player not found'}), 404
@@ -1721,11 +1697,6 @@ def pay_jail_fine(game_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Paid jail fine
@@ -1778,11 +1749,6 @@ def use_jail_card(game_id):
       - in: body
         name: body
         required: true
-        schema:
-          type: object
-          properties:
-            player_id:
-              type: integer
     responses:
       200:
         description: Used jail card
@@ -1820,9 +1786,9 @@ def use_jail_card(game_id):
     return jsonify({'message': 'Used Get Out of Jail Free card'}), 200
 
 ### Bankruptcy Endpoints ###
-@app.route('/games/<int:game_id>/player/<int:player_id>/bankrupt', methods=['POST'])
+@app.route('/games/<int:game_id>/player/bankrupt', methods=['POST'])
 @jwt_required()
-def declare_bankruptcy(game_id, player_id):
+def declare_bankruptcy(game_id):
     """
     Declare bankruptcy.
     ---
@@ -1831,10 +1797,6 @@ def declare_bankruptcy(game_id, player_id):
     parameters:
       - in: path
         name: game_id
-        required: true
-        type: integer
-      - in: path
-        name: player_id
         required: true
         type: integer
     responses:
@@ -1850,8 +1812,8 @@ def declare_bankruptcy(game_id, player_id):
       400:
         description: Cannot declare bankruptcy
     """
-    user_id = get_jwt_identity()
-    player = Player.query.filter_by(id=player_id, game_id=game_id).first()
+    user_id = get_jwt_identity()    
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not player:
         return jsonify({'message': 'Player not found'}), 404
