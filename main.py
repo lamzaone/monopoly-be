@@ -1163,33 +1163,29 @@ def create_trade(game_id):
           receiver_id:
             type: integer
           offer:
-            type: array
-            items:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum: [property, money, get_out_of_jail_card]
-                property_ids:
-                  type: array
-                  items:
-                    type: integer
-                amount:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [property, money, get_out_of_jail_card]
+              property_ids:
+                type: array
+                items:
                   type: integer
+              amount:
+                type: integer
           request:
-            type: array
-            items:
-              type: object
-              properties:
-                type:
-                  type: string
-                  enum: [property, money, get_out_of_jail_card]
-                property_ids:
-                  type: array
-                  items:
-                    type: integer
-                amount:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [property, money, get_out_of_jail_card]
+              property_ids:
+                type: array
+                items:
                   type: integer
+              amount:
+                type: integer
   responses:
     201:
       description: Trade created
@@ -1230,49 +1226,48 @@ def create_trade(game_id):
   db.session.flush()  # To get the trade ID
   
   # Add trade items (offer)
-  for item in data['offer']:
-    if item['type'] == 'property':
-      for property_id in item.get('property_ids', []):
-        trade_item = TradeItem(
-          trade_id=new_trade.id,
-          type=item['type'],
-          property_id=property_id,
-          from_sender=True
-        )
-        db.session.add(trade_item)
-    else:
+  if data['offer']['type'] == 'property':
+    for property_id in data['offer'].get('property_ids', []):
       trade_item = TradeItem(
         trade_id=new_trade.id,
-        type=item['type'],
-        amount=item.get('amount'),
+        type=data['offer']['type'],
+        property_id=property_id,
         from_sender=True
       )
       db.session.add(trade_item)
+  else:
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type=data['offer']['type'],
+      amount=data['offer'].get('amount'),
+      from_sender=True
+    )
+    db.session.add(trade_item)
   
   # Add trade items (request)
-  for item in data['request']:
-    if item['type'] == 'property':
-      for property_id in item.get('property_ids', []):
-        trade_item = TradeItem(
-          trade_id=new_trade.id,
-          type=item['type'],
-          property_id=property_id,
-          from_sender=False
-        )
-        db.session.add(trade_item)
-    else:
+  if data['request']['type'] == 'property':
+    for property_id in data['request'].get('property_ids', []):
       trade_item = TradeItem(
         trade_id=new_trade.id,
-        type=item['type'],
-        amount=item.get('amount'),
+        type=data['request']['type'],
+        property_id=property_id,
         from_sender=False
       )
       db.session.add(trade_item)
+  else:
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type=data['request']['type'],
+      amount=data['request'].get('amount'),
+      from_sender=False
+    )
+    db.session.add(trade_item)
   
   db.session.commit()
   
   record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
   return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
+
 
 @app.route('/games/<int:game_id>/trades', methods=['GET'])
 @jwt_required()
@@ -1304,31 +1299,27 @@ def get_game_trades(game_id):
             game_id:
               type: integer
             offer:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  property_ids:
-                    type: array
-                    items:
-                      type: integer
-                  amount:
+              type: object
+              properties:
+                type:
+                  type: string
+                property_ids:
+                  type: array
+                  items:
                     type: integer
+                amount:
+                  type: integer
             request:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  property_ids:
-                    type: array
-                    items:
-                      type: integer
-                  amount:
+              type: object
+              properties:
+                type:
+                  type: string
+                property_ids:
+                  type: array
+                  items:
                     type: integer
+                amount:
+                  type: integer
     404:
       description: Player not found in the game
   """
@@ -1351,20 +1342,16 @@ def get_game_trades(game_id):
       'sender_id': trade.sender_id,
       'sender_username': Player.query.get(trade.sender_id).username,
       'game_id': trade.game_id,
-      'offer': [
-        {
-          'type': item.type,
-          'property_ids': [item.property_id] if item.property_id else [],
-          'amount': item.amount
-        } for item in offer_items
-      ],
-      'request': [
-        {
-          'type': item.type,
-          'property_ids': [item.property_id] if item.property_id else [],
-          'amount': item.amount
-        } for item in request_items
-      ]
+      'offer': {
+        'type': offer_items[0].type if offer_items else None,
+        'property_ids': [item.property_id for item in offer_items if item.property_id],
+        'amount': next((item.amount for item in offer_items if item.amount), None)
+      },
+      'request': {
+        'type': request_items[0].type if request_items else None,
+        'property_ids': [item.property_id for item in request_items if item.property_id],
+        'amount': next((item.amount for item in request_items if item.amount), None)
+      }
     })
 
   return jsonify(trade_list), 200
