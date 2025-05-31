@@ -1274,6 +1274,101 @@ def create_trade(game_id):
   record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
   return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
 
+@app.route('/games/<int:game_id>/trades', methods=['GET'])
+@jwt_required()
+def get_game_trades(game_id):
+  """
+  Get all trades for a specific game and player.
+  ---
+  tags:
+    - Trade
+  parameters:
+    - in: path
+      name: game_id
+      required: true
+      type: integer
+  responses:
+    200:
+      description: List of trades for the player in the game
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            trade_id:
+              type: integer
+            sender_id:
+              type: integer
+            sender_username:
+              type: string
+            game_id:
+              type: integer
+            offer:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  property_ids:
+                    type: array
+                    items:
+                      type: integer
+                  amount:
+                    type: integer
+            request:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  property_ids:
+                    type: array
+                    items:
+                      type: integer
+                  amount:
+                    type: integer
+    404:
+      description: Player not found in the game
+  """
+  user_id = get_jwt_identity()
+  player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
+
+  if not player:
+    return jsonify({'message': 'Player not found in the game'}), 404
+
+  # Get all trades where the player is the receiver in the specified game
+  trades = Trade.query.filter_by(receiver_id=player.id, game_id=game_id).all()
+
+  trade_list = []
+  for trade in trades:
+    offer_items = TradeItem.query.filter_by(trade_id=trade.id, from_sender=True).all()
+    request_items = TradeItem.query.filter_by(trade_id=trade.id, from_sender=False).all()
+
+    trade_list.append({
+      'trade_id': trade.id,
+      'sender_id': trade.sender_id,
+      'sender_username': Player.query.get(trade.sender_id).username,
+      'game_id': trade.game_id,
+      'offer': [
+        {
+          'type': item.type,
+          'property_ids': [item.property_id] if item.property_id else [],
+          'amount': item.amount
+        } for item in offer_items
+      ],
+      'request': [
+        {
+          'type': item.type,
+          'property_ids': [item.property_id] if item.property_id else [],
+          'amount': item.amount
+        } for item in request_items
+      ]
+    })
+
+  return jsonify(trade_list), 200
+
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/accept', methods=['POST'])
 @jwt_required()
 def accept_trade(game_id, trade_id):
