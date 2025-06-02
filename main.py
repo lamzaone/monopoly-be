@@ -1165,9 +1165,6 @@ def create_trade(game_id):
           offer:
             type: object
             properties:
-              type:
-                type: string
-                enum: [property, money, get_out_of_jail_card]
               property_ids:
                 type: array
                 items:
@@ -1177,9 +1174,6 @@ def create_trade(game_id):
           request:
             type: object
             properties:
-              type:
-                type: string
-                enum: [property, money, get_out_of_jail_card]
               property_ids:
                 type: array
                 items:
@@ -1203,25 +1197,23 @@ def create_trade(game_id):
   """
   user_id = get_jwt_identity()
   data = request.get_json()
-  
+
   # Validate request data
   if 'sender_id' not in data or 'receiver_id' not in data:
     return jsonify({'message': 'Missing sender_id or receiver_id in request'}), 400
-  
+
   # Verify game and players exist and are in the same game
   game = Game.query.get(game_id)
   sender = Player.query.filter_by(id=data['sender_id'], game_id=game_id).first()
   receiver = Player.query.filter_by(id=data['receiver_id'], game_id=game_id).first()
-  
+
   if not game or not sender or not receiver:
     return jsonify({'message': 'Game or player not found'}), 404
-    
+
   # Verify requesting user is the sender
   if sender.user_id != int(user_id):
-    return jsonify({'message': 'Cannot create trade for another player ',
-                    'user_id': user_id,
-                    'sender_id': sender.user_id}), 403
-    
+    return jsonify({'message': 'Cannot create trade for another player'}), 403
+
   # Create trade
   new_trade = Trade(
     game_id=game_id,
@@ -1230,47 +1222,45 @@ def create_trade(game_id):
   )
   db.session.add(new_trade)
   db.session.flush()  # To get the trade ID
-  
+
   # Add trade items (offer)
-  if data.get('offer', {}).get('type') == 'property':
-    for property_id in data['offer'].get('property_ids', []):
-      trade_item = TradeItem(
-        trade_id=new_trade.id,
-        type=data['offer']['type'],
-        property_id=property_id,
-        from_sender=True
-      )
-      db.session.add(trade_item)
-  else:
+  for property_id in data.get('offer', {}).get('property_ids', []):
     trade_item = TradeItem(
       trade_id=new_trade.id,
-      type=data['offer']['type'],
-      amount=data['offer'].get('amount'),
+      type='property',
+      property_id=property_id,
       from_sender=True
     )
     db.session.add(trade_item)
-  
-  # Add trade items (request)
-  if data.get('request', {}).get('type') == 'property':
-    for property_id in data['request'].get('property_ids', []):
-      trade_item = TradeItem(
-        trade_id=new_trade.id,
-        type=data['request']['type'],
-        property_id=property_id,
-        from_sender=False
-      )
-      db.session.add(trade_item)
-  else:
+  if 'amount' in data.get('offer', {}):
     trade_item = TradeItem(
       trade_id=new_trade.id,
-      type=data['request']['type'],
-      amount=data['request'].get('amount'),
+      type='money',
+      amount=data['offer']['amount'],
+      from_sender=True
+    )
+    db.session.add(trade_item)
+
+  # Add trade items (request)
+  for property_id in data.get('request', {}).get('property_ids', []):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='property',
+      property_id=property_id,
       from_sender=False
     )
     db.session.add(trade_item)
-  
+  if 'amount' in data.get('request', {}):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='money',
+      amount=data['request']['amount'],
+      from_sender=False
+    )
+    db.session.add(trade_item)
+
   db.session.commit()
-  
+
   record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
   return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
 
