@@ -1201,7 +1201,7 @@ def create_trade(game_id):
     404:
       description: Game or player not found
   """
-  user_id = int(get_jwt_identity())
+  user_id = get_jwt_identity()
   data = request.get_json()
   
   # Validate request data
@@ -1217,7 +1217,7 @@ def create_trade(game_id):
     return jsonify({'message': 'Game or player not found'}), 404
     
   # Verify requesting user is the sender
-  if sender.user_id != user_id:
+  if sender.user_id != int(user_id):
     return jsonify({'message': 'Cannot create trade for another player ',
                     'user_id': user_id,
                     'sender_id': sender.user_id}), 403
