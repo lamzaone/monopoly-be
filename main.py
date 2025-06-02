@@ -1431,23 +1431,20 @@ def accept_trade(game_id, trade_id):
                     property.owner_id = trade.receiver_id
                 else:
                     property.owner_id = trade.sender_id
-            if item.type == 'property':
-                property = Property.query.get(item.property_id)
-                if property:
-                    property.owner_id = trade.sender_id
-                if item.from_sender:
-                    sender.balance -= item.amount
-                    receiver.balance += item.amount
-                else:
-                    receiver.balance -= item.amount
-                    sender.balance += item.amount
-            elif item.type == 'get_out_of_jail_card':
-                if item.from_sender:
-                    sender.get_out_of_jail_cards -= 1
-                    receiver.get_out_of_jail_cards += 1
-                else:
-                    receiver.get_out_of_jail_cards -= 1
-                    sender.get_out_of_jail_cards += 1
+        if item.type == 'money':
+            if item.from_sender:
+                sender.balance -= item.amount
+                receiver.balance += item.amount
+            else:
+                receiver.balance -= item.amount
+                sender.balance += item.amount
+        elif item.type == 'get_out_of_jail_card':
+            if item.from_sender:
+                sender.get_out_of_jail_cards -= 1
+                receiver.get_out_of_jail_cards += 1
+            else:
+                receiver.get_out_of_jail_cards -= 1
+                sender.get_out_of_jail_cards += 1
     
     trade.status = 'accepted'
     db.session.commit()
