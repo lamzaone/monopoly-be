@@ -1402,7 +1402,8 @@ def accept_trade(game_id, trade_id):
     # Verify trade is still valid (players still own properties, have enough money, etc.)
     for item in trade_items:
         if item.type == 'property' and item.from_sender:
-            if item.property.owner_id != trade.sender_id:
+            property = Property.query.get(item.property_id)
+            if not property or property.owner_id != trade.sender_id:
                 return jsonify({'message': 'Sender no longer owns offered property'}), 400
         elif item.type == 'money' and item.from_sender:
             if trade.sender.balance < item.amount:
@@ -1411,9 +1412,10 @@ def accept_trade(game_id, trade_id):
             if trade.sender.get_out_of_jail_cards < 1:
                 return jsonify({'message': 'Sender no longer has get out of jail card'}), 400
                 
-        # Similar checks for receiver's items
         if item.type == 'property' and not item.from_sender:
-            if item.property.owner_id != trade.receiver_id:
+            property = Property.query.get(item.property_id)
+            if not property or property.owner_id != trade.receiver_id:
+                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
                 return jsonify({'message': 'Receiver no longer owns requested property'}), 400
         elif item.type == 'money' and not item.from_sender:
             if trade.receiver.balance < item.amount:
@@ -1422,11 +1424,13 @@ def accept_trade(game_id, trade_id):
             if trade.receiver.get_out_of_jail_cards < 1:
                 return jsonify({'message': 'Receiver no longer has get out of jail card'}), 400
     
-    # Execute the trade
-    for item in trade_items:
         if item.type == 'property':
-            if item.from_sender:
-                item.property.owner_id = trade.receiver_id
+            property = Property.query.get(item.property_id)
+            if property:
+                if item.from_sender:
+                    property.owner_id = trade.receiver_id
+                else:
+                    property.owner_id = trade.sender_id
             else:
                 item.property.owner_id = trade.sender_id
         elif item.type == 'money':
