@@ -1218,7 +1218,7 @@ def create_trade(game_id):
     
   # Verify requesting user is the sender
   if sender.user_id != user_id:
-    return jsonify({'message': 'Cannot create trade for another player'}), 403
+    return jsonify({'message': 'Cannot create trade for another player '+sender.user_id+' '+user_id}), 403
     
   # Create trade
   new_trade = Trade(
