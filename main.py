@@ -1418,10 +1418,10 @@ def accept_trade(game_id, trade_id):
             if not property or property.owner_id != trade.receiver_id:
                 return jsonify({'message': 'Receiver no longer owns requested property'}), 400
         elif item.type == 'money' and not item.from_sender:
-            if trade.receiver.balance < item.amount:
+            if receiver.balance < item.amount:
                 return jsonify({'message': 'Receiver no longer has enough money'}), 400
         elif item.type == 'get_out_of_jail_card' and not item.from_sender:
-            if trade.receiver.get_out_of_jail_cards < 1:
+            if receiver.get_out_of_jail_cards < 1:
                 return jsonify({'message': 'Receiver no longer has get out of jail card'}), 400
     
         if item.type == 'property':
