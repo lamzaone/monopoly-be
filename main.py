@@ -1357,87 +1357,62 @@ def get_game_trades(game_id):
 def accept_trade(game_id, trade_id):
     """
     Accept a trade offer.
-    ---
-    tags:
-      - Trade
-    parameters:
-      - in: path
-        name: game_id
-        required: true
-        type: integer
-      - in: path
-        name: trade_id
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Trade accepted
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-      404:
-        description: Trade not found
-      400:
-        description: Cannot accept trade
     """
     user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
-    
+
     if not trade:
         return jsonify({'message': 'Trade not found'}), 404
-        
-    # Verify requesting user is the receiver
-    receiver = Player.query.get(trade.receiver_id)
-    if not receiver or receiver.user_id != int(user_id):
-        return jsonify({'message': 'Cannot accept this trade'}), 403
-        
+
     if trade.status != 'pending':
         return jsonify({'message': 'Trade already processed'}), 400
-        
-    # Get all trade items
-    trade_items = TradeItem.query.filter_by(trade_id=trade.id).all()
+
     sender = Player.query.get(trade.sender_id)
     receiver = Player.query.get(trade.receiver_id)
-    
-    # Verify trade is still valid (players still own properties, have enough money, etc.)
+
+    if not receiver or receiver.user_id != int(user_id):
+        return jsonify({'message': 'Cannot accept this trade'}), 403
+
+    trade_items = TradeItem.query.filter_by(trade_id=trade.id).all()
+
+    # Validate ownership and funds first (no mutation yet)
     for item in trade_items:
-        if item.type == 'property' and item.from_sender:
-            property = Property.query.get(item.property_id)
-            if not property or property.owner_id != trade.sender_id:
-                return jsonify({'message': 'Sender no longer owns offered property'}), 400
-        elif item.type == 'money' and item.from_sender:
-            if trade.sender.balance < item.amount:
-                return jsonify({'message': 'Sender no longer has enough money'}), 400
-        elif item.type == 'get_out_of_jail_card' and item.from_sender:
-            if trade.sender.get_out_of_jail_cards < 1:
-                return jsonify({'message': 'Sender no longer has get out of jail card'}), 400                
-        if item.type == 'property' and not item.from_sender:
-            property = Property.query.get(item.property_id)
-            if not property or property.owner_id != trade.receiver_id:
-                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
-        elif item.type == 'money' and not item.from_sender:
-            if receiver.balance < item.amount:
-                return jsonify({'message': 'Receiver no longer has enough money'}), 400
-        elif item.type == 'get_out_of_jail_card' and not item.from_sender:
-            if receiver.get_out_of_jail_cards < 1:
-                return jsonify({'message': 'Receiver no longer has get out of jail card'}), 400
-    
         if item.type == 'property':
-            property = Property.query.get(item.property_id)
-            if property:
-                if item.from_sender:
-                    property.owner_id = trade.receiver_id
-                else:
-                    property.owner_id = trade.sender_id
-        if item.type == 'money':
+            prop = Property.query.get(item.property_id)
+            if not prop:
+                return jsonify({'message': 'Property not found'}), 400
+            if item.from_sender and prop.owner_id != sender.id:
+                return jsonify({'message': 'Sender no longer owns offered property'}), 400
+            if not item.from_sender and prop.owner_id != receiver.id:
+                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
+        elif item.type == 'money':
+            if item.from_sender and sender.balance < item.amount:
+                return jsonify({'message': 'Sender does not have enough money'}), 400
+            if not item.from_sender and receiver.balance < item.amount:
+                return jsonify({'message': 'Receiver does not have enough money'}), 400
+        elif item.type == 'get_out_of_jail_card':
+            if item.from_sender and sender.get_out_of_jail_cards < 1:
+                return jsonify({'message': 'Sender has no get out of jail card'}), 400
+            if not item.from_sender and receiver.get_out_of_jail_cards < 1:
+                return jsonify({'message': 'Receiver has no get out of jail card'}), 400
+
+    # Apply changes after validation
+    for item in trade_items:
+        if item.type == 'property':
+            prop = Property.query.get(item.property_id)
+            if item.from_sender:
+                prop.owner_id = receiver.id
+            else:
+                prop.owner_id = sender.id
+
+        elif item.type == 'money':
             if item.from_sender:
                 sender.balance -= item.amount
                 receiver.balance += item.amount
             else:
                 receiver.balance -= item.amount
                 sender.balance += item.amount
+
         elif item.type == 'get_out_of_jail_card':
             if item.from_sender:
                 sender.get_out_of_jail_cards -= 1
@@ -1445,11 +1420,11 @@ def accept_trade(game_id, trade_id):
             else:
                 receiver.get_out_of_jail_cards -= 1
                 sender.get_out_of_jail_cards += 1
-    
+
     trade.status = 'accepted'
     db.session.commit()
-    
-    record_game_history(game_id, trade.receiver_id, 'trade_accepted', f'trade {trade.id}')
+
+    record_game_history(game_id, trade.receiver_id, 'trade_accepted', f'Trade {trade.id}')
     return jsonify({'message': 'Trade accepted'}), 200
 
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/reject', methods=['POST'])
