@@ -1326,7 +1326,7 @@ def get_game_trades(game_id):
     return jsonify({'message': 'Player not found in the game'}), 404
 
   # Get all trades where the player is the receiver in the specified game
-  trades = Trade.query.filter_by(receiver_id=player.id, game_id=game_id).all()
+  trades = Trade.query.filter_by(receiver_id=player.id, game_id=game_id, status='pending').all()
 
   trade_list = []
   for trade in trades:
