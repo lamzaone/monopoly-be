@@ -1204,6 +1204,10 @@ def create_trade(game_id):
   user_id = get_jwt_identity()
   data = request.get_json()
   
+  # Validate request data
+  if 'sender_id' not in data or 'receiver_id' not in data:
+    return jsonify({'message': 'Missing sender_id or receiver_id in request'}), 400
+  
   # Verify game and players exist and are in the same game
   game = Game.query.get(game_id)
   sender = Player.query.filter_by(id=data['sender_id'], game_id=game_id).first()
