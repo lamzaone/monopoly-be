@@ -1206,8 +1206,8 @@ def create_trade(game_id):
   
   # Verify game and players exist and are in the same game
   game = Game.query.get(game_id)
-  sender = Player.query.filter_by(id=data['sender_id'], game_id=game_id).first()
-  receiver = Player.query.filter_by(id=data['receiver_id'], game_id=game_id).first()
+  sender = Player.query.filter_by(user_id=data['sender_id'], game_id=game_id).first()
+  receiver = Player.query.filter_by(user_id=data['receiver_id'], game_id=game_id).first()
   
   if not game or not sender or not receiver:
     return jsonify({'message': 'Game or player not found'}), 404
