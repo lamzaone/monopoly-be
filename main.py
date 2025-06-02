@@ -1232,7 +1232,7 @@ def create_trade(game_id):
   db.session.flush()  # To get the trade ID
   
   # Add trade items (offer)
-  if data['offer']['type'] == 'property':
+  if data.get('offer', {}).get('type') == 'property':
     for property_id in data['offer'].get('property_ids', []):
       trade_item = TradeItem(
         trade_id=new_trade.id,
@@ -1251,7 +1251,7 @@ def create_trade(game_id):
     db.session.add(trade_item)
   
   # Add trade items (request)
-  if data['request']['type'] == 'property':
+  if data.get('request', {}).get('type') == 'property':
     for property_id in data['request'].get('property_ids', []):
       trade_item = TradeItem(
         trade_id=new_trade.id,
