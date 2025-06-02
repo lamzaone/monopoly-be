@@ -1433,7 +1433,7 @@ def accept_trade(game_id, trade_id):
                     property.owner_id = trade.receiver_id
                 else:
                     property.owner_id = trade.sender_id
-            else:
+            if item.type == 'property':
                 item.property.owner_id = trade.sender_id
             elif item.type == 'money':
                 if item.from_sender:
