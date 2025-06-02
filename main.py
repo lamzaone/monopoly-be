@@ -1459,12 +1459,13 @@ def reject_trade(game_id, trade_id):
     """
     user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not trade:
         return jsonify({'message': 'Trade not found'}), 404
         
     # Verify requesting user is the receiver
-    if trade.receiver_id != int(user_id):
+    if trade.receiver_id != player.id:
         return jsonify({'message': 'Cannot reject this trade'}), 403
         
     if trade.status != 'pending':
