@@ -1412,12 +1412,10 @@ def accept_trade(game_id, trade_id):
                 return jsonify({'message': 'Sender no longer has enough money'}), 400
         elif item.type == 'get_out_of_jail_card' and item.from_sender:
             if trade.sender.get_out_of_jail_cards < 1:
-                return jsonify({'message': 'Sender no longer has get out of jail card'}), 400
-                
+                return jsonify({'message': 'Sender no longer has get out of jail card'}), 400                
         if item.type == 'property' and not item.from_sender:
             property = Property.query.get(item.property_id)
             if not property or property.owner_id != trade.receiver_id:
-                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
                 return jsonify({'message': 'Receiver no longer owns requested property'}), 400
         elif item.type == 'money' and not item.from_sender:
             if trade.receiver.balance < item.amount:
@@ -1434,8 +1432,9 @@ def accept_trade(game_id, trade_id):
                 else:
                     property.owner_id = trade.sender_id
             if item.type == 'property':
-                item.property.owner_id = trade.sender_id
-            elif item.type == 'money':
+                property = Property.query.get(item.property_id)
+                if property:
+                    property.owner_id = trade.sender_id
                 if item.from_sender:
                     sender.balance -= item.amount
                     receiver.balance += item.amount
