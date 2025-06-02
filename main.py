@@ -1389,7 +1389,8 @@ def accept_trade(game_id, trade_id):
         return jsonify({'message': 'Trade not found'}), 404
         
     # Verify requesting user is the receiver
-    if trade.receiver.user_id != int(user_id):
+    receiver = Player.query.get(trade.receiver_id)
+    if not receiver or receiver.user_id != int(user_id):
         return jsonify({'message': 'Cannot accept this trade'}), 403
         
     if trade.status != 'pending':
