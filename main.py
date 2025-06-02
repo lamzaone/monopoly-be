@@ -1398,6 +1398,8 @@ def accept_trade(game_id, trade_id):
         
     # Get all trade items
     trade_items = TradeItem.query.filter_by(trade_id=trade.id).all()
+    sender = Player.query.get(trade.sender_id)
+    receiver = Player.query.get(trade.receiver_id)
     
     # Verify trade is still valid (players still own properties, have enough money, etc.)
     for item in trade_items:
@@ -1433,20 +1435,20 @@ def accept_trade(game_id, trade_id):
                     property.owner_id = trade.sender_id
             else:
                 item.property.owner_id = trade.sender_id
-        elif item.type == 'money':
-            if item.from_sender:
-                trade.sender.balance -= item.amount
-                trade.receiver.balance += item.amount
-            else:
-                trade.receiver.balance -= item.amount
-                trade.sender.balance += item.amount
-        elif item.type == 'get_out_of_jail_card':
-            if item.from_sender:
-                trade.sender.get_out_of_jail_cards -= 1
-                trade.receiver.get_out_of_jail_cards += 1
-            else:
-                trade.receiver.get_out_of_jail_cards -= 1
-                trade.sender.get_out_of_jail_cards += 1
+            elif item.type == 'money':
+                if item.from_sender:
+                    sender.balance -= item.amount
+                    receiver.balance += item.amount
+                else:
+                    receiver.balance -= item.amount
+                    sender.balance += item.amount
+            elif item.type == 'get_out_of_jail_card':
+                if item.from_sender:
+                    sender.get_out_of_jail_cards -= 1
+                    receiver.get_out_of_jail_cards += 1
+                else:
+                    receiver.get_out_of_jail_cards -= 1
+                    sender.get_out_of_jail_cards += 1
     
     trade.status = 'accepted'
     db.session.commit()
