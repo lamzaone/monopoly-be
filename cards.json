@@ -1,0 +1,82 @@
+[
+  {
+    "type": "chance",
+    "title": "Advance to Go",
+    "description": "Advance to Go and collect $200.",
+    "action": "move",
+    "amount": 200,
+    "position": 0
+  },
+  {
+    "type": "chance",
+    "title": "Go to Jail",
+    "description": "Go directly to jail. Do not pass Go. Do not collect $200.",
+    "action": "jail",
+    "amount": 0,
+    "position": 10
+  },
+  {
+    "type": "chance",
+    "title": "Bank pays you dividend",
+    "description": "Bank pays you dividend of $50.",
+    "action": "receive",
+    "amount": 50,
+    "position": null
+  },
+  {
+    "type": "chance",
+    "title": "Pay poor tax",
+    "description": "Pay a poor tax of $15.",
+    "action": "pay",
+    "amount": 15,
+    "position": null
+  },
+  {
+    "type": "community_chest",
+    "title": "Doctor's fees",
+    "description": "Pay doctor's fees of $50.",
+    "action": "pay",
+    "amount": 50,
+    "position": null
+  },
+  {
+    "type": "community_chest",
+    "title": "From sale of stock",
+    "description": "You get $50 from sale of stock.",
+    "action": "receive",
+    "amount": 50,
+    "position": null
+  },
+  {
+    "type": "community_chest",
+    "title": "Go to Jail",
+    "description": "Go directly to jail. Do not pass Go. Do not collect $200.",
+    "action": "jail",
+    "amount": 0,
+    "position": 10
+  },
+  {
+    "type": "community_chest",
+    "title": "Advance to Go",
+    "description": "Advance to Go and collect $200.",
+    "action": "move",
+    "amount": 200,
+    "position": 0
+  },
+  {
+    "type": "community_chest",
+    "title": "Get Out of Jail Free",
+    "description": "This card may be kept until needed or sold.",
+    "action": "get_out_of_jail",
+    "amount": 0,
+    "position": null
+  },
+  {
+    "type": "chance",
+    "title": "Advance to Illinois Ave",
+    "description": "Advance to Illinois Ave. If you pass Go, collect $200.",
+    "action": "move",
+    "amount": 0,
+    "position": 24
+  }
+]

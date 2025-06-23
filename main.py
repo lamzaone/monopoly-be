@@ -115,6 +115,27 @@ def initialize_properties(game_id):
         db.session.add(new_prop)
     db.session.commit()
 
+def initialize_cards(game_id):
+    card_file_path = os.path.join(os.path.dirname(__file__), 'cards.json')
+
+    with open(card_file_path, 'r') as file:
+        cards = json.load(file)
+
+    print(cards)
+
+    for card in cards:
+        new_card = Card(
+            game_id=game_id,
+            title=card['title'],
+            type=card['type'],
+            description=card['description'],
+            action=card['action'],
+            amount=card['amount']
+        )
+
+        db.session.add(new_card)
+    db.session.commit()
+
 @app.route('/')
 def index():
     return redirect('/apidocs')
@@ -545,6 +566,9 @@ def start_game(game_id):
     # Initialize game properties if not already done
     if not game.properties:
         initialize_properties(game_id)
+
+    if not game.cards:
+        initialize_cards(game_id)
         
     game.status = 'active'
     game.current_player_id = player.id  # Let the creator go first
@@ -1723,12 +1747,12 @@ def draw_card(game_id):
     if not player:
         return jsonify({'message': 'Player not found'}), 404
         
-    if player.user_id != user_id:
+    if player.user_id != int(user_id):
         return jsonify({'message': 'Cannot draw card for another player'}), 403
         
     # Get a random card of the requested type
     card = Card.query.filter_by(game_id=game_id, type=data['card_type']).order_by(db.func.random()).first()
-    
+
     if not card:
         return jsonify({'message': 'No cards of this type available'}), 400
         
