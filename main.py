@@ -115,6 +115,27 @@ def initialize_properties(game_id):
         db.session.add(new_prop)
     db.session.commit()
 
+def initialize_cards(game_id):
+    card_file_path = os.path.join(os.path.dirname(__file__), 'cards.json')
+
+    with open(card_file_path, 'r') as file:
+        cards = json.load(file)
+
+    print(cards)
+
+    for card in cards:
+        new_card = Card(
+            game_id=game_id,
+            title=card['title'],
+            type=card['type'],
+            description=card['description'],
+            action=card['action'],
+            amount=card['amount']
+        )
+
+        db.session.add(new_card)
+    db.session.commit()
+
 @app.route('/')
 def index():
     return redirect('/apidocs')
@@ -545,6 +566,9 @@ def start_game(game_id):
     # Initialize game properties if not already done
     if not game.properties:
         initialize_properties(game_id)
+
+    if not game.cards:
+        initialize_cards(game_id)
         
     game.status = 'active'
     game.current_player_id = player.id  # Let the creator go first
@@ -1142,211 +1166,289 @@ def sell_house(game_id, property_id):
 @app.route('/games/<int:game_id>/trade', methods=['POST'])
 @jwt_required()
 def create_trade(game_id):
-    """
-    Create a new trade offer.
-    ---
-    tags:
-      - Trade
-    parameters:
-      - in: path
-        name: game_id
-        required: true
-        type: integer
-      - in: body
-        name: body
-        required: true
-        schema:
+  """
+  Create a new trade offer.
+  ---
+  tags:
+    - Trade
+  parameters:
+    - in: path
+      name: game_id
+      required: true
+      type: integer
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          sender_id:
+            type: integer
+          receiver_id:
+            type: integer
+          offer:
+            type: object
+            properties:
+              property_ids:
+                type: array
+                items:
+                  type: integer
+              amount:
+                type: integer
+          request:
+            type: object
+            properties:
+              property_ids:
+                type: array
+                items:
+                  type: integer
+              amount:
+                type: integer
+  responses:
+    201:
+      description: Trade created
+      schema:
+        type: object
+        properties:
+          message:
+            type: string
+          trade_id:
+            type: integer
+    400:
+      description: Invalid trade
+    404:
+      description: Game or player not found
+  """
+  user_id = get_jwt_identity()
+  data = request.get_json()
+
+  # Validate request data
+  if 'sender_id' not in data or 'receiver_id' not in data:
+    return jsonify({'message': 'Missing sender_id or receiver_id in request'}), 400
+
+  # Verify game and players exist and are in the same game
+  game = Game.query.get(game_id)
+  sender = Player.query.filter_by(id=data['sender_id'], game_id=game_id).first()
+  receiver = Player.query.filter_by(id=data['receiver_id'], game_id=game_id).first()
+
+  if not game or not sender or not receiver:
+    return jsonify({'message': 'Game or player not found'}), 404
+
+  # Verify requesting user is the sender
+  if sender.user_id != int(user_id):
+    return jsonify({'message': 'Cannot create trade for another player'}), 403
+
+  # Create trade
+  new_trade = Trade(
+    game_id=game_id,
+    sender_id=sender.id,
+    receiver_id=receiver.id
+  )
+  db.session.add(new_trade)
+  db.session.flush()  # To get the trade ID
+
+  # Add trade items (offer)
+  for property_id in data.get('offer', {}).get('property_ids', []):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='property',
+      property_id=property_id,
+      from_sender=True
+    )
+    db.session.add(trade_item)
+  if 'amount' in data.get('offer', {}):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='money',
+      amount=data['offer']['amount'],
+      from_sender=True
+    )
+    db.session.add(trade_item)
+
+  # Add trade items (request)
+  for property_id in data.get('request', {}).get('property_ids', []):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='property',
+      property_id=property_id,
+      from_sender=False
+    )
+    db.session.add(trade_item)
+  if 'amount' in data.get('request', {}):
+    trade_item = TradeItem(
+      trade_id=new_trade.id,
+      type='money',
+      amount=data['request']['amount'],
+      from_sender=False
+    )
+    db.session.add(trade_item)
+
+  db.session.commit()
+
+  record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
+  return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
+
+
+@app.route('/games/<int:game_id>/trades', methods=['GET'])
+@jwt_required()
+def get_game_trades(game_id):
+  """
+  Get all trades for a specific game and player.
+  ---
+  tags:
+    - Trade
+  parameters:
+    - in: path
+      name: game_id
+      required: true
+      type: integer
+  responses:
+    200:
+      description: List of trades for the player in the game
+      schema:
+        type: array
+        items:
           type: object
           properties:
-            sender_id:
-              type: integer
-            receiver_id:
-              type: integer
-            offer:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    enum: [property, money, get_out_of_jail_card]
-                  property_id:
-                    type: integer
-                  amount:
-                    type: integer
-            request:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    enum: [property, money, get_out_of_jail_card]
-                  property_id:
-                    type: integer
-                  amount:
-                    type: integer
-    responses:
-      201:
-        description: Trade created
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
             trade_id:
               type: integer
-      400:
-        description: Invalid trade
-      404:
-        description: Game or player not found
-    """
-    user_id = get_jwt_identity()
-    data = request.get_json()
-    
-    # Verify game and players exist and are in the same game
-    game = Game.query.get(game_id)
-    sender = Player.query.filter_by(id=data['sender_id'], game_id=game_id).first()
-    receiver = Player.query.filter_by(id=data['receiver_id'], game_id=game_id).first()
-    
-    if not game or not sender or not receiver:
-        return jsonify({'message': 'Game or player not found'}), 404
-        
-    # Verify requesting user is the sender
-    if sender.user_id != user_id:
-        return jsonify({'message': 'Cannot create trade for another player'}), 403
-        
-    # Create trade
-    new_trade = Trade(
-        game_id=game_id,
-        sender_id=sender.id,
-        receiver_id=receiver.id
-    )
-    db.session.add(new_trade)
-    db.session.flush()  # To get the trade ID
-    
-    # Add trade items (offer)
-    for item in data['offer']:
-        trade_item = TradeItem(
-            trade_id=new_trade.id,
-            type=item['type'],
-            property_id=item.get('property_id'),
-            amount=item.get('amount'),
-            from_sender=True
-        )
-        db.session.add(trade_item)
-    
-    # Add trade items (request)
-    for item in data['request']:
-        trade_item = TradeItem(
-            trade_id=new_trade.id,
-            type=item['type'],
-            property_id=item.get('property_id'),
-            amount=item.get('amount'),
-            from_sender=False
-        )
-        db.session.add(trade_item)
-    
-    db.session.commit()
-    
-    record_game_history(game_id, sender.id, 'trade_created', f'with player {receiver.id}')
-    return jsonify({'message': 'Trade created', 'trade_id': new_trade.id}), 201
+            sender_id:
+              type: integer
+            sender_username:
+              type: string
+            game_id:
+              type: integer
+            offer:
+              type: object
+              properties:
+                type:
+                  type: string
+                property_ids:
+                  type: array
+                  items:
+                    type: integer
+                amount:
+                  type: integer
+            request:
+              type: object
+              properties:
+                type:
+                  type: string
+                property_ids:
+                  type: array
+                  items:
+                    type: integer
+                amount:
+                  type: integer
+    404:
+      description: Player not found in the game
+  """
+  user_id = get_jwt_identity()
+  player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
+
+  if not player:
+    return jsonify({'message': 'Player not found in the game'}), 404
+
+  # Get all trades where the player is the receiver in the specified game
+  trades = Trade.query.filter_by(receiver_id=player.id, game_id=game_id, status='pending').all()
+
+  trade_list = []
+  for trade in trades:
+    offer_items = TradeItem.query.filter_by(trade_id=trade.id, from_sender=True).all()
+    request_items = TradeItem.query.filter_by(trade_id=trade.id, from_sender=False).all()
+
+    trade_list.append({
+      'trade_id': trade.id,
+      'sender_id': trade.sender_id,
+      'sender_username': Player.query.get(trade.sender_id).username,
+      'game_id': trade.game_id,
+      'offer': {
+        'type': offer_items[0].type if offer_items else None,
+        'property_ids': [item.property_id for item in offer_items if item.property_id],
+        'amount': next((item.amount for item in offer_items if item.amount), None)
+      },
+      'request': {
+        'type': request_items[0].type if request_items else None,
+        'property_ids': [item.property_id for item in request_items if item.property_id],
+        'amount': next((item.amount for item in request_items if item.amount), None)
+      }
+    })
+
+  return jsonify(trade_list), 200
 
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/accept', methods=['POST'])
 @jwt_required()
 def accept_trade(game_id, trade_id):
     """
     Accept a trade offer.
-    ---
-    tags:
-      - Trade
-    parameters:
-      - in: path
-        name: game_id
-        required: true
-        type: integer
-      - in: path
-        name: trade_id
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Trade accepted
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-      404:
-        description: Trade not found
-      400:
-        description: Cannot accept trade
     """
     user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
-    
+
     if not trade:
         return jsonify({'message': 'Trade not found'}), 404
-        
-    # Verify requesting user is the receiver
-    if trade.receiver.user_id != user_id:
-        return jsonify({'message': 'Cannot accept this trade'}), 403
-        
+
     if trade.status != 'pending':
         return jsonify({'message': 'Trade already processed'}), 400
-        
-    # Get all trade items
+
+    sender = Player.query.get(trade.sender_id)
+    receiver = Player.query.get(trade.receiver_id)
+
+    if not receiver or receiver.user_id != int(user_id):
+        return jsonify({'message': 'Cannot accept this trade'}), 403
+
     trade_items = TradeItem.query.filter_by(trade_id=trade.id).all()
-    
-    # Verify trade is still valid (players still own properties, have enough money, etc.)
-    for item in trade_items:
-        if item.type == 'property' and item.from_sender:
-            if item.property.owner_id != trade.sender_id:
-                return jsonify({'message': 'Sender no longer owns offered property'}), 400
-        elif item.type == 'money' and item.from_sender:
-            if trade.sender.balance < item.amount:
-                return jsonify({'message': 'Sender no longer has enough money'}), 400
-        elif item.type == 'get_out_of_jail_card' and item.from_sender:
-            if trade.sender.get_out_of_jail_cards < 1:
-                return jsonify({'message': 'Sender no longer has get out of jail card'}), 400
-                
-        # Similar checks for receiver's items
-        if item.type == 'property' and not item.from_sender:
-            if item.property.owner_id != trade.receiver_id:
-                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
-        elif item.type == 'money' and not item.from_sender:
-            if trade.receiver.balance < item.amount:
-                return jsonify({'message': 'Receiver no longer has enough money'}), 400
-        elif item.type == 'get_out_of_jail_card' and not item.from_sender:
-            if trade.receiver.get_out_of_jail_cards < 1:
-                return jsonify({'message': 'Receiver no longer has get out of jail card'}), 400
-    
-    # Execute the trade
+
+    # Validate ownership and funds first (no mutation yet)
     for item in trade_items:
         if item.type == 'property':
+            prop = Property.query.get(item.property_id)
+            if not prop:
+                return jsonify({'message': 'Property not found'}), 400
+            if item.from_sender and prop.owner_id != sender.id:
+                return jsonify({'message': 'Sender no longer owns offered property'}), 400
+            if not item.from_sender and prop.owner_id != receiver.id:
+                return jsonify({'message': 'Receiver no longer owns requested property'}), 400
+        elif item.type == 'money':
+            if item.from_sender and sender.balance < item.amount:
+                return jsonify({'message': 'Sender does not have enough money'}), 400
+            if not item.from_sender and receiver.balance < item.amount:
+                return jsonify({'message': 'Receiver does not have enough money'}), 400
+        elif item.type == 'get_out_of_jail_card':
+            if item.from_sender and sender.get_out_of_jail_cards < 1:
+                return jsonify({'message': 'Sender has no get out of jail card'}), 400
+            if not item.from_sender and receiver.get_out_of_jail_cards < 1:
+                return jsonify({'message': 'Receiver has no get out of jail card'}), 400
+
+    # Apply changes after validation
+    for item in trade_items:
+        if item.type == 'property':
+            prop = Property.query.get(item.property_id)
             if item.from_sender:
-                item.property.owner_id = trade.receiver_id
+                prop.owner_id = receiver.id
             else:
-                item.property.owner_id = trade.sender_id
+                prop.owner_id = sender.id
+
         elif item.type == 'money':
             if item.from_sender:
-                trade.sender.balance -= item.amount
-                trade.receiver.balance += item.amount
+                sender.balance -= item.amount
+                receiver.balance += item.amount
             else:
-                trade.receiver.balance -= item.amount
-                trade.sender.balance += item.amount
+                receiver.balance -= item.amount
+                sender.balance += item.amount
+
         elif item.type == 'get_out_of_jail_card':
             if item.from_sender:
-                trade.sender.get_out_of_jail_cards -= 1
-                trade.receiver.get_out_of_jail_cards += 1
+                sender.get_out_of_jail_cards -= 1
+                receiver.get_out_of_jail_cards += 1
             else:
-                trade.receiver.get_out_of_jail_cards -= 1
-                trade.sender.get_out_of_jail_cards += 1
-    
+                receiver.get_out_of_jail_cards -= 1
+                sender.get_out_of_jail_cards += 1
+
     trade.status = 'accepted'
     db.session.commit()
-    
-    record_game_history(game_id, trade.receiver_id, 'trade_accepted', f'trade {trade.id}')
+
+    record_game_history(game_id, trade.receiver_id, 'trade_accepted', f'Trade {trade.id}')
     return jsonify({'message': 'Trade accepted'}), 200
 
 @app.route('/games/<int:game_id>/trade/<int:trade_id>/reject', methods=['POST'])
@@ -1381,12 +1483,13 @@ def reject_trade(game_id, trade_id):
     """
     user_id = get_jwt_identity()
     trade = Trade.query.filter_by(id=trade_id, game_id=game_id).first()
+    player = Player.query.filter_by(user_id=user_id, game_id=game_id).first()
     
     if not trade:
         return jsonify({'message': 'Trade not found'}), 404
         
     # Verify requesting user is the receiver
-    if trade.receiver.user_id != user_id:
+    if trade.receiver_id != player.id:
         return jsonify({'message': 'Cannot reject this trade'}), 403
         
     if trade.status != 'pending':
@@ -1644,12 +1747,12 @@ def draw_card(game_id):
     if not player:
         return jsonify({'message': 'Player not found'}), 404
         
-    if player.user_id != user_id:
+    if player.user_id != int(user_id):
         return jsonify({'message': 'Cannot draw card for another player'}), 403
         
     # Get a random card of the requested type
     card = Card.query.filter_by(game_id=game_id, type=data['card_type']).order_by(db.func.random()).first()
-    
+
     if not card:
         return jsonify({'message': 'No cards of this type available'}), 400
         

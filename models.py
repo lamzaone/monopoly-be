@@ -19,6 +19,7 @@ class Game(db.Model):
     current_player_id = db.Column(db.Integer)
     players = db.relationship('Player', backref='game', lazy=True)
     properties = db.relationship('Property', backref='game', lazy=True)
+    cards = db.relationship('Card', backref='game', lazy=True)
 
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
